@@ -1,5 +1,8 @@
 module Model where
 
+import Graphics.Gloss.Data.Vector
+import Graphics.Gloss.Data.Point
+
 data GameState = GameState {
     player :: Player,
     objects :: [Object],
@@ -12,16 +15,9 @@ data Object = PlayerObject Player | EnemyObject Enemy | BulletObject Bullet
 
 data Attack = Basic | ItemAttack Item
 
-data Position = Position {
-    xPos :: Float,
-    yPos :: Float
-}
+data Position = Point Float Float
 
--- Should return a normalised direction vector
-data Direction = Direction {
-    xDir :: Float,
-    yDir :: Float
-}
+data Direction = Vector Float Float
 
 data Player = Player {
     playerPosition :: Position,
@@ -58,4 +54,4 @@ data Settings = Settings {
 
 -- If i ever want to incorporate speed i can do that here
 newPosition :: Position -> Direction -> Position
-newPosition (Position x y) (Direction x' y') = Position (x + x') (y + y')
+newPosition (Point x y) (Vector vx vy) = Point (x + vx) (y + vy)
