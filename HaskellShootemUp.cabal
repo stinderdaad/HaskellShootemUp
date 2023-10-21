@@ -16,5 +16,4 @@ executable HaskellShootemUp
   other-modules:       Controller
                      , Model
                      , View
-                     , HelperFunctions
   default-language:    Haskell2010

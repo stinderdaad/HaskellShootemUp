@@ -142,7 +142,7 @@ level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
 initState :: GameState
 initState = GameState {
     player = initPlayer,
-    objects = [PlayerObject initPlayer],
+    objects = [],
     score = 0,
     time = 100,
     settings = level1
@@ -167,6 +167,9 @@ newPosition (Point x y) dir speed = Point (x + (dirX * speed)) (y + (dirY * spee
     where (Vector dirX dirY) = normalizeDirection dir
 
 normalizeDirection :: Direction -> Direction
+normalizeDirection (Vector 0 0) = Vector 0 0
+normalizeDirection (Vector 0 y) = Vector 0 (y / abs y)
+normalizeDirection (Vector x 0) = Vector (x / abs x) 0
 normalizeDirection (Vector x y) = Vector (x / magnitude) (y / magnitude)
     where magnitude = sqrt (x^2 + y^2)
 
@@ -186,11 +189,27 @@ movePlayerUp gs = gs { player = (player gs) {
     playerDirection = addDirections (playerDirection (player gs))  (Vector 0 1) } }
 
 movePlayerDown :: GameState -> GameState
-movePlayerDown gs =gs { player = (player gs) {
+movePlayerDown gs = gs { player = (player gs) {
     playerDirection = addDirections (playerDirection (player gs))  (Vector 0 (-1)) } }
 
 shoot :: GameState -> GameState
 shoot gs = gs { objects = objects gs ++ [BulletObject (basicBullet (PlayerObject (player gs)))] }
+
+-- updatePlayerObject :: GameState -> GameState
+-- updatePlayerObject gs = gs { objects = map (updatePlayerObject' (player gs)) (objects gs) }
+
+-- updatePlayerObject' :: Player -> Object -> Object
+-- updatePlayerObject'  player (PlayerObject playerObj) = PlayerObject playerObj {
+--     playerPosition = playerPosition player,
+--     playerDirection = playerDirection player,
+--     playerHealth = playerHealth player,
+--     playerAttack = playerAttack player,
+--     playerSpeed = playerSpeed player
+-- }
+-- updatePlayerObject' _ obj = obj
+
+updatePlayer :: Player -> Player
+updatePlayer player = player { playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player) }
 
 updateObject :: Object -> Object
 updateObject (BulletObject bullet) = BulletObject bullet { bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }

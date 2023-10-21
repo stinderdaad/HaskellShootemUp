@@ -8,7 +8,9 @@ view :: GameState -> IO Picture
 --view gs = return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
 view gs = do
     putStrLn $ "Rendering with GameState: " ++ show gs
-    return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
+    return (pictures ([objectToPicture (PlayerObject (player gs))]
+                    ++ objectsToPictures (objects gs)
+                    ++ [timerToPicture gs]))
 
 objectsToPictures :: [Object] -> [Picture]
 objectsToPictures [] = []

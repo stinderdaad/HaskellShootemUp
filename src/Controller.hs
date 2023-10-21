@@ -4,7 +4,8 @@ import Model
 import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
-step secs gs = return gs { objects = updateObjects (objects gs),
+step secs gs = return gs { player = updatePlayer (player gs),
+                           objects = updateObjects (objects gs),
                            time = time gs - secs
                         }
 
