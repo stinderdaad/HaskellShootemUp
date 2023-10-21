@@ -17,7 +17,8 @@ data GameState = GameState {
 data Menu = MainMenu | PauseMenu | GameOverMenu | HighScores
     deriving (Show)
 
-data Object = PlayerObject Player | EnemyObject Enemy | BulletObject Bullet
+data Object = PlayerObject Player | EnemyObject Enemy | BulletObject Bullet | ItemObject Item
+
 
 data Attack = Basic | ItemAttack Item
     deriving (Show)
@@ -30,6 +31,7 @@ data Direction = Vector Float Float
 
 data Player = Player {
     playerPosition :: Position,
+    playerDirection :: Direction,
     playerHealth :: Int,
     playerAttack :: Attack,
     playerSpeed :: Float
@@ -37,6 +39,7 @@ data Player = Player {
 
 data Enemy = Enemy {
     enemyPosition :: Position,
+    enemyDirection :: Direction,
     enemyHealth :: Int,
     enemySize :: (Int, Int),
     enemyAttack :: Attack,
@@ -77,6 +80,7 @@ instance Show GameState where
 
 instance Show Player where
     show player = "Player { position: " ++ show (playerPosition player)
+                  ++ ", direction: " ++ show (playerDirection player)
                   ++ ", health: " ++ show (playerHealth player)
                   ++ ", attack: " ++ show (playerAttack player)
                   ++ ", speed: " ++ show (playerSpeed player)
@@ -86,6 +90,7 @@ instance Show Object where
     show (PlayerObject player) = show player
     show (EnemyObject enemy) = show enemy
     show (BulletObject bullet) = show bullet
+    show (ItemObject item) = show item
 
 instance Show Enemy where
     show enemy = "Enemy { position: " ++ show (enemyPosition enemy)
@@ -120,16 +125,16 @@ instance Show Settings where
 -- Functions
 
 initPlayer :: Player
-initPlayer = Player (Point (-600) 0) 3 Basic 10
+initPlayer = Player (Point (-600) 0) (Vector 0 0) 3 Basic 10
 
 basicEnemy :: Enemy
-basicEnemy = Enemy (Point 400 200) 1 (10, 10) Basic 10 50
+basicEnemy = Enemy (Point 400 200) (Vector 0 0) 1 (10, 10) Basic 10 50
 
 toughEnemy :: Enemy
-toughEnemy = Enemy (Point 400 200) 3 (10, 10) Basic 10 100
+toughEnemy = Enemy (Point 400 200) (Vector 0 0) 3 (10, 10) Basic 10 100
 
 basicBoss :: Enemy
-basicBoss = Enemy (Point 400 200) 20 (50, 50) Basic 10 1000
+basicBoss = Enemy (Point 400 200) (Vector 0 0) 20 (50, 50) Basic 10 1000
 
 level1 :: Settings
 level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
@@ -147,36 +152,50 @@ basicBullet :: Object -> Bullet
 basicBullet (PlayerObject player) = Bullet (playerPosition player) (Vector 1 0) 5 (2, 2)
 -- Direction should be towards players position, add later
 basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 5 (2, 2)
-basicBullet _ = error "Cannot create bullet from bullet"
+basicBullet _ = error "Cannot create bullet from bullet or item"
 
 bulletHitObject :: GameState -> Bullet -> Object -> GameState
 bulletHitObject gs bullet (PlayerObject player) = gs { player = player { playerHealth = playerHealth player - 1 } }
+bulletHitObject _ _ _ = undefined
 
 playerDead :: GameState -> Bool
 playerDead gs = playerHealth (player gs) <= 0
 
 -- Direction should be normalized vector
 newPosition :: Position -> Direction -> Float -> Position
-newPosition (Point x y) (Vector vx vy) speed = Point (x + (vx * speed)) (y + (vy * speed))
+newPosition (Point x y) dir speed = Point (x + (dirX * speed)) (y + (dirY * speed))
+    where (Vector dirX dirY) = normalizeDirection dir
+
+normalizeDirection :: Direction -> Direction
+normalizeDirection (Vector x y) = Vector (x / sqrt (x^2 + y^2)) (y / sqrt (x^2 + y^2))
+
+addDirections :: Direction -> Direction -> Direction
+addDirections (Vector x1 y1) (Vector x2 y2) = Vector (x1 + x2) (y1 + y2)
 
 movePlayerLeft :: GameState -> GameState
-movePlayerLeft gs = gs { player = (player gs) { playerPosition = newPosition (playerPosition (player gs)) (Vector (-1) 0) (playerSpeed (player gs))} }
+movePlayerLeft gs = gs { player = (player gs) {
+    playerDirection = addDirections (playerDirection (player gs))  (Vector (-1) 0) } }
 
 movePlayerRight :: GameState -> GameState
-movePlayerRight gs = gs { player = (player gs) { playerPosition = newPosition (playerPosition (player gs)) (Vector 1 0) (playerSpeed (player gs))} }
+movePlayerRight gs = gs { player = (player gs) {
+    playerDirection = addDirections (playerDirection (player gs))  (Vector 1 0) } }
 
 movePlayerUp :: GameState -> GameState
-movePlayerUp gs = gs { player = (player gs) { playerPosition = newPosition (playerPosition (player gs)) (Vector 0 1) (playerSpeed (player gs))} }
+movePlayerUp gs = gs { player = (player gs) {
+    playerDirection = addDirections (playerDirection (player gs))  (Vector 0 1) } }
 
 movePlayerDown :: GameState -> GameState
-movePlayerDown gs = gs { player = (player gs) { playerPosition = newPosition (playerPosition (player gs)) (Vector 0 (-1)) (playerSpeed (player gs))} }
+movePlayerDown gs =gs { player = (player gs) {
+    playerDirection = addDirections (playerDirection (player gs))  (Vector 0 (-1)) } }
 
 shoot :: GameState -> GameState
 shoot gs = gs { objects = objects gs ++ [BulletObject (basicBullet (PlayerObject (player gs)))] }
 
 updateObject :: Object -> Object
 updateObject (BulletObject bullet) = BulletObject bullet { bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }
-updateObject obj = obj
+updateObject (PlayerObject player) = PlayerObject player { playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player) }
+updateObject (EnemyObject enemy) = EnemyObject enemy { enemyPosition = newPosition (enemyPosition enemy) (enemyDirection enemy) (enemySpeed enemy) }
+updateObject (ItemObject item) = ItemObject item
 
 updateObjects :: [Object] -> [Object]
 updateObjects = map updateObject
