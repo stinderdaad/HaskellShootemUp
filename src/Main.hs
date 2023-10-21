@@ -10,9 +10,9 @@ fps = 10
 
 main :: IO ()
 main = playIO (InWindow "Counter" (400, 400) (0, 0)) -- Or FullScreen
-              blue            -- Background color
-              fps               -- Frames per second
-              initState     -- Initial state
-              undefined--view             -- View function
-              undefined--input            -- Event function
-              undefined--step             -- Step function
+              blue                                   -- Background color
+              fps                                    -- Frames per second
+              initState                              -- Initial state
+              view                                   -- View function
+              input                                  -- Event function
+              step                                   -- Step function
