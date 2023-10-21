@@ -9,7 +9,7 @@ fps :: Int
 fps = 10
 
 main :: IO ()
-main = playIO (InWindow "Counter" (400, 400) (0, 0)) -- Or FullScreen
+main = playIO (InWindow "Counter" (1600, 800) (0, 0)) -- Or FullScreen
               blue                                   -- Background color
               fps                                    -- Frames per second
               initState                              -- Initial state

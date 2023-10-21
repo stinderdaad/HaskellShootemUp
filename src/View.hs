@@ -2,6 +2,7 @@ module View where
 
 import Graphics.Gloss
 import Model
+import HelperFunctions
 
 view :: GameState -> IO Picture
 view gs = return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
@@ -19,4 +20,5 @@ positionToTuple :: Position -> (Float, Float)
 positionToTuple (Point x y) = (x, y)
 
 timerToPicture :: GameState -> Picture
-timerToPicture gs = translate (-100) 0 (scale 0.2 0.2 (text (show (time gs))))
+timerToPicture gs = translate 0 200 (scale 0.2 0.2 pic)
+    where pic = text (show (floorFloat (time gs)))

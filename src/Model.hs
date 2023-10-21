@@ -81,7 +81,7 @@ level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
 initState :: GameState
 initState = GameState {
     player = initPlayer,
-    objects = [],
+    objects = [PlayerObject initPlayer],
     score = 0,
     time = 100,
     settings = level1
