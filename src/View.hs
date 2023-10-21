@@ -2,10 +2,10 @@ module View where
 
 import Graphics.Gloss
 import Model
-import HelperFunctions
+
 
 view :: GameState -> IO Picture
--- view gs = return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
+--view gs = return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
 view gs = do
     putStrLn $ "Rendering with GameState: " ++ show gs
     return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
@@ -22,3 +22,10 @@ objectToPicture (BulletObject bullet) = uncurry translate (positionToTuple(bulle
 timerToPicture :: GameState -> Picture
 timerToPicture gs = translate 0 300 (scale 0.2 0.2 pic)
     where pic = text (show (floorFloat (time gs)))
+
+positionToTuple :: Position -> (Float, Float)
+positionToTuple (Point x y) = (x, y)
+
+-- This helper function rounds down a Float to the nearest whole number.
+floorFloat :: Float -> Int
+floorFloat flt = fromIntegral (floor flt)

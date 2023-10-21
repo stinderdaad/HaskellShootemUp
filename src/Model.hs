@@ -167,7 +167,8 @@ newPosition (Point x y) dir speed = Point (x + (dirX * speed)) (y + (dirY * spee
     where (Vector dirX dirY) = normalizeDirection dir
 
 normalizeDirection :: Direction -> Direction
-normalizeDirection (Vector x y) = Vector (x / sqrt (x^2 + y^2)) (y / sqrt (x^2 + y^2))
+normalizeDirection (Vector x y) = Vector (x / magnitude) (y / magnitude)
+    where magnitude = sqrt (x^2 + y^2)
 
 addDirections :: Direction -> Direction -> Direction
 addDirections (Vector x1 y1) (Vector x2 y2) = Vector (x1 + x2) (y1 + y2)

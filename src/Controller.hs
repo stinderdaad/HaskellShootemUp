@@ -25,12 +25,14 @@ input :: Event -> GameState -> IO GameState
 input event gs = do
     putStrLn $ "Received event: " ++ show event
     return $ case event of
-        EventKey (Char c) Down _ _ -> handleCharKey c gs
-        EventKey (SpecialKey key) Down _ _ -> handleSpecialKey key gs
+        EventKey (Char c) Down _ _ -> handleCharKeyDown c gs
+        EventKey (Char c) Up _ _ -> handleCharKeyUp c gs
+        EventKey (SpecialKey key) Down _ _ -> handleSpecialKeyDown key gs
+        EventKey (SpecialKey key) Up _ _ -> handleSpecialKeyUp key gs
         _ -> gs
 
-handleCharKey :: Char -> GameState -> GameState
-handleCharKey c gs
+handleCharKeyDown :: Char -> GameState -> GameState
+handleCharKeyDown c gs
     | c == 'a' = movePlayerLeft gs
     | c == 'd' = movePlayerRight gs
     | c == 'w' = movePlayerUp gs
@@ -38,9 +40,24 @@ handleCharKey c gs
     | c == ' ' = shoot gs
     | otherwise = gs
 
-handleSpecialKey :: SpecialKey -> GameState -> GameState
-handleSpecialKey KeyLeft gs = movePlayerLeft gs
-handleSpecialKey KeyRight gs = movePlayerRight gs
-handleSpecialKey KeyUp gs = movePlayerUp gs
-handleSpecialKey KeyDown gs = movePlayerDown gs
-handleSpecialKey _ gs = gs
+handleCharKeyUp :: Char -> GameState -> GameState
+handleCharKeyUp c gs
+    | c == 'a' = movePlayerRight gs
+    | c == 'd' = movePlayerLeft gs
+    | c == 'w' = movePlayerDown gs
+    | c == 's' = movePlayerUp gs
+    | otherwise = gs
+
+handleSpecialKeyDown :: SpecialKey -> GameState -> GameState
+handleSpecialKeyDown KeyLeft gs = movePlayerLeft gs
+handleSpecialKeyDown KeyRight gs = movePlayerRight gs
+handleSpecialKeyDown KeyUp gs = movePlayerUp gs
+handleSpecialKeyDown KeyDown gs = movePlayerDown gs
+handleSpecialKeyDown _ gs = gs
+
+handleSpecialKeyUp :: SpecialKey -> GameState -> GameState
+handleSpecialKeyUp KeyLeft gs = movePlayerRight gs
+handleSpecialKeyUp KeyRight gs = movePlayerLeft gs
+handleSpecialKeyUp KeyUp gs = movePlayerDown gs
+handleSpecialKeyUp KeyDown gs = movePlayerUp gs
+handleSpecialKeyUp _ gs = gs
