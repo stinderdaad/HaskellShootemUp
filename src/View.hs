@@ -5,7 +5,10 @@ import Model
 import HelperFunctions
 
 view :: GameState -> IO Picture
-view gs = return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
+-- view gs = return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
+view gs = do
+    putStrLn $ "Rendering with GameState: " ++ show gs
+    return (pictures (objectsToPictures (objects gs) ++ [timerToPicture gs]))
 
 objectsToPictures :: [Object] -> [Picture]
 objectsToPictures [] = []

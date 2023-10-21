@@ -172,7 +172,7 @@ movePlayerDown :: GameState -> GameState
 movePlayerDown gs = gs { player = (player gs) { playerPosition = newPosition (playerPosition (player gs)) (Vector 0 (-1)) (playerSpeed (player gs))} }
 
 shoot :: GameState -> GameState
-shoot gs = undefined
+shoot gs = gs { objects = objects gs ++ [BulletObject (basicBullet (PlayerObject (player gs)))] }
 
 updateObject :: Object -> Object
 updateObject (BulletObject bullet) = BulletObject bullet { bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }
