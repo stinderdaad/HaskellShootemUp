@@ -16,9 +16,6 @@ objectToPicture (PlayerObject player) = uncurry translate (positionToTuple(playe
 objectToPicture (EnemyObject enemy) = uncurry translate (positionToTuple(enemyPosition enemy)) (color red (circleSolid 10))
 objectToPicture (BulletObject bullet) = uncurry translate (positionToTuple(bulletPosition bullet)) (color blue (circleSolid 5))
 
-positionToTuple :: Position -> (Float, Float)
-positionToTuple (Point x y) = (x, y)
-
 timerToPicture :: GameState -> Picture
-timerToPicture gs = translate 0 200 (scale 0.2 0.2 pic)
+timerToPicture gs = translate 0 300 (scale 0.2 0.2 pic)
     where pic = text (show (floorFloat (time gs)))
