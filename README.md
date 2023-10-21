@@ -7,7 +7,7 @@ Fortunately you can shoot back and the more enemies you hit the higher your scor
 If you manage to survive long enough a boss will spawn and if you beat it you complete the level.
 
 ## Controls
--You move the plane with either 'wasd' or the arrow keys.
--You can shoot by pressing the spacebar.
--Pressing 'Esc' will pause the game.
--You can pickup items by flying over them.
+- You move the plane with either 'wasd' or the arrow keys.
+- You can shoot by pressing the spacebar.
+- Pressing 'Esc' will pause the game.
+- You can pickup items by flying over them.
