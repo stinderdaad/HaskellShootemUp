@@ -72,10 +72,10 @@ data Settings = Settings {
 
 instance Show GameState where
     show gs = "GameState { time: " ++ show (time gs)
-              ++ ", player: " ++ show (player gs)
+              -- ++ ", player: " ++ show (player gs)
               ++ ", objects: " ++ show (objects gs)
-              ++ ", score: " ++ show (score gs)
-              ++ ", settings: " ++ show (settings gs)
+              -- ++ ", score: " ++ show (score gs)
+              -- ++ ", settings: " ++ show (settings gs)
               ++ " }"
 
 instance Show Player where
@@ -125,16 +125,16 @@ instance Show Settings where
 -- Functions
 
 initPlayer :: Player
-initPlayer = Player (Point (-600) 0) (Vector 0 0) 3 Basic 10
+initPlayer = Player (Point (-600) 0) (Vector 0 0) 3 Basic 5
 
 basicEnemy :: Enemy
-basicEnemy = Enemy (Point 400 200) (Vector 0 0) 1 (10, 10) Basic 10 50
+basicEnemy = Enemy (Point 400 200) (Vector 0 0) 1 (10, 10) Basic 5 50
 
 toughEnemy :: Enemy
-toughEnemy = Enemy (Point 400 200) (Vector 0 0) 3 (10, 10) Basic 10 100
+toughEnemy = Enemy (Point 400 200) (Vector 0 0) 3 (10, 10) Basic 5 100
 
 basicBoss :: Enemy
-basicBoss = Enemy (Point 400 200) (Vector 0 0) 20 (50, 50) Basic 10 1000
+basicBoss = Enemy (Point 400 200) (Vector 0 0) 20 (50, 50) Basic 5 1000
 
 level1 :: Settings
 level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
@@ -142,16 +142,16 @@ level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
 initState :: GameState
 initState = GameState {
     player = initPlayer,
-    objects = [],
+    objects = [EnemyObject basicEnemy],
     score = 0,
     time = 100,
     settings = level1
 }
 
 basicBullet :: Object -> Bullet
-basicBullet (PlayerObject player) = Bullet (playerPosition player) (Vector 1 0) 5 (2, 2)
+basicBullet (PlayerObject player) = Bullet (playerPosition player) (Vector 1 0) 15 (2, 2)
 -- Direction should be towards players position, add later
-basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 5 (2, 2)
+basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 10 (2, 2)
 basicBullet _ = error "Cannot create bullet from bullet or item"
 
 bulletHitObject :: GameState -> Bullet -> Object -> GameState

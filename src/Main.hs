@@ -6,7 +6,7 @@ import Model
 import View
 
 fps :: Int
-fps = 60
+fps = 1
 
 main :: IO ()
 main = playIO (InWindow "Counter" (1600, 800) (0, 0)) -- Or FullScreen

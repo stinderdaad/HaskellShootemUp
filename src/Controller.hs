@@ -2,6 +2,7 @@ module Controller where
 
 import Model
 import Graphics.Gloss.Interface.IO.Game
+import Control.Exception (handle)
 
 step :: Float -> GameState -> IO GameState
 step secs gs = return gs { player = updatePlayer (player gs),
@@ -38,7 +39,6 @@ handleCharKeyDown c gs
     | c == 'd' = movePlayerRight gs
     | c == 'w' = movePlayerUp gs
     | c == 's' = movePlayerDown gs
-    | c == ' ' = shoot gs
     | otherwise = gs
 
 handleCharKeyUp :: Char -> GameState -> GameState
@@ -54,6 +54,7 @@ handleSpecialKeyDown KeyLeft gs = movePlayerLeft gs
 handleSpecialKeyDown KeyRight gs = movePlayerRight gs
 handleSpecialKeyDown KeyUp gs = movePlayerUp gs
 handleSpecialKeyDown KeyDown gs = movePlayerDown gs
+handleSpecialKeyDown KeySpace gs = shoot gs
 handleSpecialKeyDown _ gs = gs
 
 handleSpecialKeyUp :: SpecialKey -> GameState -> GameState
