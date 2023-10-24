@@ -17,7 +17,7 @@ data GameState = GameState {
 data Menu = MainMenu | PauseMenu | GameOverMenu | HighScores
     deriving (Show)
 
-data Object = PlayerObject Player | EnemyObject Enemy | BulletObject Bullet | ItemObject Item
+data Object = PlayerObject Player | EnemyObject Enemy | BulletObject Bullet | ItemObject Item -- BossObject Enemy
 
 
 data Attack = Basic | ItemAttack Item
@@ -68,7 +68,7 @@ data Settings = Settings {
     boss :: Enemy
 }
 
--- Show
+-- Show (for Testing)
 
 instance Show GameState where
     show gs = "GameState { time: " ++ show (time gs)
@@ -138,6 +138,12 @@ level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
 
 allObjects :: GameState -> [Object]
 allObjects gs = PlayerObject(player gs) : objects gs
+
+objectPosition :: Object -> Position
+objectPosition (PlayerObject player) = playerPosition player
+objectPosition (EnemyObject enemy) = enemyPosition enemy
+objectPosition (BulletObject bullet) = bulletPosition bullet
+objectPosition (ItemObject item) = itemPosition item
 
 initPlayer :: Player
 initPlayer = Player (Point (-600) 0) (Vector 0 0) 3 Basic 5

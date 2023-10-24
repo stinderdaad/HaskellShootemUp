@@ -11,3 +11,7 @@ If you manage to survive long enough a boss will spawn and if you beat it you co
 - You can shoot by pressing the spacebar.
 - Pressing 'Esc' will pause the game.
 - You can pickup items by flying over them.
+
+## Assets
+All sprites are from Kenney game assets:
+https://kenney-assets.itch.io/pixel-shmup
