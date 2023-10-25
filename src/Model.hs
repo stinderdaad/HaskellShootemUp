@@ -17,7 +17,7 @@ data GameState = GameState {
 data Menu = MainMenu | PauseMenu | GameOverMenu | HighScores
     deriving (Show)
 
-data Object = PlayerObject Player | EnemyObject Enemy | BulletObject Bullet | ItemObject Item -- BossObject Enemy
+data Object = PlayerObject Player | EnemyObject Enemy | BossObject Enemy | BulletObject Bullet | ItemObject Item
 
 
 data Attack = Basic | ItemAttack Item
@@ -32,18 +32,19 @@ data Direction = Vector Float Float
 data Player = Player {
     playerPosition :: Position,
     playerDirection :: Direction,
+    playerSpeed :: Float,
     playerHealth :: Int,
-    playerAttack :: Attack,
-    playerSpeed :: Float
+    playerSize :: (Int, Int),
+    playerAttack :: Attack
 }
 
 data Enemy = Enemy {
     enemyPosition :: Position,
     enemyDirection :: Direction,
+    enemySpeed :: Float,
     enemyHealth :: Int,
     enemySize :: (Int, Int),
     enemyAttack :: Attack,
-    enemySpeed :: Float,
     pointsWorth :: Int
 }
 
@@ -58,7 +59,8 @@ data Item = Item {
     itemPosition :: Position,
     itemSize :: (Int, Int),
     bulletQuantity :: Int,
-    reloadTimeMultiplier :: Float
+    reloadTimeMultiplier :: Float,
+    timer :: Float
 }
 
 data Settings = Settings {
@@ -145,20 +147,47 @@ objectPosition (EnemyObject enemy) = enemyPosition enemy
 objectPosition (BulletObject bullet) = bulletPosition bullet
 objectPosition (ItemObject item) = itemPosition item
 
-initPlayer :: Player
-initPlayer = Player (Point (-600) 0) (Vector 0 0) 3 Basic 5
+objectSize :: Object -> (Int, Int)
+objectSize (PlayerObject player) = playerSize player
+objectSize (EnemyObject enemy) = enemySize enemy
+objectSize (BulletObject bullet) = bulletSize bullet
+objectSize (ItemObject item) = itemSize item
 
+initPlayer :: Player
+initPlayer = Player (Point (-600) 0) (Vector 0 0) 5 3 (30, 30) Basic
+
+-- enemies y should be random
 basicEnemy :: Enemy
-basicEnemy = Enemy (Point 400 200) (Vector 0 0) 1 (10, 10) Basic 5 50
+basicEnemy = Enemy (Point 800 200) (Vector (-1) 0) 5 1 (30, 30) Basic 50
 
 toughEnemy :: Enemy
-toughEnemy = Enemy (Point 400 200) (Vector 0 0) 3 (10, 10) Basic 5 100
+toughEnemy = Enemy (Point 800 200) (Vector (-1) 0) 3 3 (30, 30) Basic 100
 
 basicBoss :: Enemy
-basicBoss = Enemy (Point 400 200) (Vector 0 0) 20 (50, 50) Basic 5 1000
+basicBoss = Enemy (Point 800 200) (Vector 0 0) 3 20 (100, 100) Basic 1000
 
 basicBullet :: Object -> Bullet
 basicBullet (PlayerObject player) = Bullet (playerPosition player) (Vector 1 0) 15 (2, 2)
 -- Direction should be towards players position, add later
 basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 10 (2, 2)
 basicBullet _ = error "Cannot create bullet from bullet or item"
+
+objectHitObject :: Object -> Object -> Bool
+objectHitObject obj  = objectHitObject' (objectPosition obj) (objectSize obj)
+
+objectHitObject' :: Position -> (Int, Int) -> Object -> Bool
+objectHitObject' (Point x y) (w, h) obj =
+    positionInObject (Point (x - (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))) obj ||
+    positionInObject (Point (x + (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))) obj ||
+    positionInObject (Point (x + (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))) obj ||
+    positionInObject (Point (x - (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))) obj
+
+positionInObject :: Position -> Object -> Bool
+positionInObject pos obj = positionInObject' pos (objectPosition obj) (objectSize obj)
+
+positionInObject' :: Position -> Position -> (Int, Int) -> Bool
+positionInObject' (Point xPos yPos) (Point xObj yObj) (objWidth, objHeight) =
+    xPos >= xObj - (fromIntegral objWidth / 2.0)
+    && xPos <= xObj + (fromIntegral objWidth / 2.0)
+    && yPos >= yObj - (fromIntegral objHeight / 2.0)
+    && yPos <= yObj + (fromIntegral objHeight / 2.0)

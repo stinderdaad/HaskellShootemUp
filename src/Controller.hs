@@ -4,10 +4,11 @@ import Model
 import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
-step secs gs = return gs { player = updatePlayer (player gs),
+step secs gs = return (checkCollision gs {
+                           player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = time gs - secs
-                        }
+                        })
 
 
 input :: Event -> GameState -> IO GameState
@@ -91,19 +92,6 @@ movePlayerDown gs = gs { player = (player gs) {
 shoot :: GameState -> GameState
 shoot gs = gs { objects = objects gs ++ [BulletObject (basicBullet (PlayerObject (player gs)))] }
 
--- updatePlayerObject :: GameState -> GameState
--- updatePlayerObject gs = gs { objects = map (updatePlayerObject' (player gs)) (objects gs) }
-
--- updatePlayerObject' :: Player -> Object -> Object
--- updatePlayerObject'  player (PlayerObject playerObj) = PlayerObject playerObj {
---     playerPosition = playerPosition player,
---     playerDirection = playerDirection player,
---     playerHealth = playerHealth player,
---     playerAttack = playerAttack player,
---     playerSpeed = playerSpeed player
--- }
--- updatePlayerObject' _ obj = obj
-
 updatePlayer :: Player -> Player
 updatePlayer player = player {
     playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player) }
@@ -119,3 +107,16 @@ updateObject (ItemObject item) = ItemObject item
 
 updateObjects :: [Object] -> [Object]
 updateObjects = map updateObject
+
+-- placeholder, need to figure out a nice system for collision
+checkCollision :: GameState -> GameState
+checkCollision gs = gs { objects = filter (not . objectHitObject (PlayerObject (player gs))) (objects gs) }
+
+spawnBasic :: GameState -> GameState
+spawnBasic gs = gs { objects = objects gs ++ [basicEnemy] }
+
+spawnTough :: GameState -> GameState
+spawnTough gs = gs { objects = objects gs ++ [toughEnemy] }
+
+spawnBoss :: GameState -> GameState
+spawnBoss gs = gs { objects = objects gs ++ [basicBoss] }
