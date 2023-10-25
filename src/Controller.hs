@@ -5,21 +5,24 @@ import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
 step secs gs
-        | time gs == (-10) = return (checkCollision gs {
+        | menuState == Playing && currentTime == (-10) = return (checkCollision gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
                         })
-        | time gs <= 0 = return (spawnBoss (checkCollision gs{
+        | menuState == Playing && currentTime <= 0 = return (spawnBoss (checkCollision gs{
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
                         }))
-        | otherwise =  return (checkCollision gs {
+        | menuState == Playing =  return (checkCollision gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
-                           time = time gs - secs
+                           time = currentTime - secs
                         })
+        | otherwise = return gs
+    where menuState = menu gs
+          currentTime = time gs
 
 
 input :: Event -> GameState -> IO GameState
@@ -34,26 +37,29 @@ input event gs = do
 
 handleCharKeyDown :: Char -> GameState -> GameState
 handleCharKeyDown c gs
-    | c == 'a' = movePlayerLeft gs
-    | c == 'd' = movePlayerRight gs
-    | c == 'w' = movePlayerUp gs
-    | c == 's' = movePlayerDown gs
-    | otherwise = gs
+        | c == 'a' = movePlayerLeft gs
+        | c == 'd' = movePlayerRight gs
+        | c == 'w' = movePlayerUp gs
+        | c == 's' = movePlayerDown gs
+        | c == 'p' && menuState == Playing = pauseGame gs
+        | c == 'p' && menuState == PauseMenu = resumeGame gs
+        | otherwise = gs
+    where menuState = menu gs
 
 handleCharKeyUp :: Char -> GameState -> GameState
 handleCharKeyUp c gs
-    | c == 'a' = movePlayerRight gs
-    | c == 'd' = movePlayerLeft gs
-    | c == 'w' = movePlayerDown gs
-    | c == 's' = movePlayerUp gs
-    | otherwise = gs
+        | c == 'a' = movePlayerRight gs
+        | c == 'd' = movePlayerLeft gs
+        | c == 'w' = movePlayerDown gs
+        | c == 's' = movePlayerUp gs
+        | otherwise = gs
 
 handleSpecialKeyDown :: SpecialKey -> GameState -> GameState
 handleSpecialKeyDown KeyLeft gs = movePlayerLeft gs
 handleSpecialKeyDown KeyRight gs = movePlayerRight gs
 handleSpecialKeyDown KeyUp gs = movePlayerUp gs
 handleSpecialKeyDown KeyDown gs = movePlayerDown gs
-handleSpecialKeyDown KeySpace gs = shoot gs
+handleSpecialKeyDown KeySpace gs = shoot gs -- maybe auto shoot? no reason not to spam
 handleSpecialKeyDown _ gs = gs
 
 handleSpecialKeyUp :: SpecialKey -> GameState -> GameState
@@ -136,3 +142,12 @@ spawnTough gs = gs { objects = objects gs ++ [EnemyObject toughEnemy] }
 
 spawnBoss :: GameState -> GameState
 spawnBoss gs = gs { objects = objects gs ++ [BossObject basicBoss] }
+
+pauseGame :: GameState -> GameState
+pauseGame gs = gs { menu = PauseMenu }
+
+resumeGame :: GameState -> GameState
+resumeGame gs = gs { menu = Playing }
+
+gameOver :: GameState -> GameState
+gameOver gs = gs { menu = GameOverMenu }

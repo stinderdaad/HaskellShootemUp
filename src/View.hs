@@ -29,10 +29,12 @@ objectToPicture obj = uncurry translate (positionToTuple (objectPosition obj))
 
 timerToPicture :: GameState -> Picture
 timerToPicture gs
+    | menu gs == PauseMenu = translate 0 300 (scale 0.2 0.2 pause)
     | time gs == -10 = translate (-50) 300 (scale 0.2 0.2 boss)
     | otherwise = translate 0 300 (scale 0.2 0.2 pic)
     where pic = text (show (floorFloat (time gs)))
           boss = text "Boss Battle!"
+          pause = text "Paused"
 
 
 -- Sprites

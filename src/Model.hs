@@ -16,7 +16,7 @@ data GameState = GameState {
 }
 
 data Menu = MainMenu | Playing | PauseMenu | GameOverMenu | HighScores
-    deriving (Show)
+    deriving (Show, Eq)
 
 data Object = PlayerObject Player | EnemyObject Enemy | BossObject Enemy | BulletObject Bullet | ItemObject Item
 
