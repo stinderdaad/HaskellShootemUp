@@ -7,6 +7,7 @@ import System.Random
 -- Data structures
 
 data GameState = GameState {
+    menu :: Menu,
     player :: Player,
     objects :: [Object],
     score :: Int,
@@ -14,7 +15,7 @@ data GameState = GameState {
     settings :: Settings
 }
 
-data Menu = MainMenu | PauseMenu | GameOverMenu | HighScores
+data Menu = MainMenu | Playing | PauseMenu | GameOverMenu | HighScores
     deriving (Show)
 
 data Object = PlayerObject Player | EnemyObject Enemy | BossObject Enemy | BulletObject Bullet | ItemObject Item
@@ -125,12 +126,13 @@ instance Show Settings where
                     ++ ", boss: " ++ show (boss settings)
                     ++ " }"
 
--- Functions
+-- # Initialisations # --
 
 initState :: GameState
 initState = GameState {
+    menu = Playing, -- should be main menu later
     player = initPlayer,
-    objects = [EnemyObject basicEnemy],
+    objects = [EnemyObject basicEnemy], -- should be empty when spawning works
     score = 0,
     time = 3,
     settings = level1
@@ -174,6 +176,8 @@ basicBullet (PlayerObject player) = Bullet (playerPosition player) (Vector 1 0) 
 -- Direction should be towards players position, add later
 basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 10 (2, 2)
 basicBullet _ = error "Cannot create bullet from bullet or item"
+
+-- # Functions # --
 
 objectHitObject :: Object -> Object -> Bool
 objectHitObject obj  = objectHitObject' (objectPosition obj) (objectSize obj)
