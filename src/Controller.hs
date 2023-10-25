@@ -4,7 +4,18 @@ import Model
 import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
-step secs gs = return (checkCollision gs {
+step secs gs
+        | time gs == (-10) = return (checkCollision gs {
+                           player = updatePlayer (player gs),
+                           objects = updateObjects (objects gs),
+                           time = -10
+                        })
+        | time gs <= 0 = return (spawnBoss (checkCollision gs{
+                           player = updatePlayer (player gs),
+                           objects = updateObjects (objects gs),
+                           time = -10
+                        }))
+        | otherwise =  return (checkCollision gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = time gs - secs
@@ -103,6 +114,8 @@ updateObject (PlayerObject player) = PlayerObject player {
     playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player) }
 updateObject (EnemyObject enemy) = EnemyObject enemy {
     enemyPosition = newPosition (enemyPosition enemy) (enemyDirection enemy) (enemySpeed enemy) }
+updateObject (BossObject boss) = BossObject boss {
+    enemyPosition = newPosition (enemyPosition boss) (enemyDirection boss) (enemySpeed boss) }
 updateObject (ItemObject item) = ItemObject item
 
 updateObjects :: [Object] -> [Object]
@@ -112,11 +125,14 @@ updateObjects = map updateObject
 checkCollision :: GameState -> GameState
 checkCollision gs = gs { objects = filter (not . objectHitObject (PlayerObject (player gs))) (objects gs) }
 
+removeDeadObjects :: GameState -> GameState
+removeDeadObjects gs = gs { objects = filter (not . isDead) (objects gs) }
+
 spawnBasic :: GameState -> GameState
-spawnBasic gs = gs { objects = objects gs ++ [basicEnemy] }
+spawnBasic gs = gs { objects = objects gs ++ [EnemyObject basicEnemy] }
 
 spawnTough :: GameState -> GameState
-spawnTough gs = gs { objects = objects gs ++ [toughEnemy] }
+spawnTough gs = gs { objects = objects gs ++ [EnemyObject toughEnemy] }
 
 spawnBoss :: GameState -> GameState
-spawnBoss gs = gs { objects = objects gs ++ [basicBoss] }
+spawnBoss gs = gs { objects = objects gs ++ [BossObject basicBoss] }
