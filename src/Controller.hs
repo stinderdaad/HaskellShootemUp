@@ -107,7 +107,9 @@ movePlayerDown gs = gs { player = (player gs) {
     playerDirection = addDirections (playerDirection (player gs))  (Vector 0 (-1)) } }
 
 shoot :: GameState -> GameState
-shoot gs = gs { objects = objects gs ++ [BulletObject (basicBullet (PlayerObject (player gs)))] }
+shoot gs | menu gs == Playing = gs { objects = objects gs ++
+            [BulletObject (basicBullet (PlayerObject (player gs)))] }
+        | otherwise = gs
 
 updatePlayer :: Player -> Player
 updatePlayer player = player {
