@@ -221,7 +221,7 @@ goToMainMenu :: GameState -> GameState
 goToMainMenu gs = gs { menu = MainMenu }
 
 goToHighScores :: GameState -> GameState
-goToHighScores gs = gs { menu = HighScoresMenu }
+goToHighScores gs = gs { menu = HighScores }
 
 gameOver :: GameState -> GameState
 gameOver gs = gs { menu = GameOverMenu }

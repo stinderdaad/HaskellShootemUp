@@ -33,7 +33,7 @@ data Button = Button {
     buttonFunction :: Function
 }
 
-data Function = Start | HighScore | Quit | Retry | ToMainMenu | Resume
+data Function = Start | ToHighScore | Quit | Retry | ToMainMenu | Resume
     deriving (Show, Eq)
 
 data Attack = Basic | ItemAttack Item
@@ -204,7 +204,7 @@ quitButton :: Button
 quitButton = Button (Point 0 (-150)) (200, 100) Quit
 
 highScoreButton :: Button
-highScoreButton = Button (Point 0 (-300)) (200, 100) HighScore
+highScoreButton = Button (Point 0 (-300)) (200, 100) ToHighScore
 
 retryButton :: Button
 retryButton = Button (Point 0 0) (200, 100) Retry

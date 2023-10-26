@@ -10,8 +10,11 @@ view gs = do
     basicEnemySprite <- loadBasicEnemySprite
     bulletSprite <- loadBulletSprite
     bossSprite <- loadBossSprite
-    return (pictures ( objectsToPictures (allObjects gs) (playerSprite, basicEnemySprite, bulletSprite, bossSprite)
-                    ++ [timerToPicture gs]))
+    return (pictures (
+            [timerToPicture gs] ++
+            [scoreToPicture gs] ++
+            objectsToPictures (allObjects gs) (playerSprite, basicEnemySprite, bulletSprite, bossSprite)
+            ))
 
 objectsToPictures :: [Object] -> (Picture, Picture, Picture, Picture) -> [Picture]
 objectsToPictures [] _ = []
@@ -56,6 +59,9 @@ timerToPicture gs
           gameOver = text "Game Over"
           victory = text "Victory!"
 
+scoreToPicture :: GameState -> Picture
+scoreToPicture gs = translate (-700) 300 (scale 0.2 0.2 pic)
+    where pic = text ("Score: " ++ show (score gs))
 
 -- Sprites
 
