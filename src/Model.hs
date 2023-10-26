@@ -15,7 +15,8 @@ data GameState = GameState {
     settings :: Settings
 }
 
-data Menu = MainMenu | Playing | PauseMenu | GameOverMenu | HighScores
+data Menu = MainMenu | Playing | PauseMenu |
+            GameOverMenu | VictoryMenu | HighScores
     deriving (Show, Eq)
 
 data Object = PlayerObject Player |
@@ -23,8 +24,17 @@ data Object = PlayerObject Player |
               BossObject Enemy |
               BulletObject Bullet |
               ItemObject Item |
+              ButtonObject Button |
               DeadObject
 
+data Button = Button {
+    buttonPosition :: Position,
+    buttonSize :: (Int, Int),
+    buttonFunction :: Function
+}
+
+data Function = Resume | Restart | Quit | HighScore | Start
+    deriving (Show, Eq)
 
 data Attack = Basic | ItemAttack Item
     deriving (Show)

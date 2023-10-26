@@ -14,11 +14,11 @@ step secs gs
                         })
         | menuState == Playing && currentTime <= 0 =
             print gs >>
-            return (spawnBoss (updateGs gs{
+            return ((updateGs . spawnBoss) gs{
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
-                        }))
+                        })
         | menuState == Playing =
             print gs >>
             return (updateGs gs {
@@ -30,6 +30,7 @@ step secs gs
     where menuState = menu gs
           currentTime = time gs
           updateGs = removeDeadObjects .
+                     checkBossDead .
                      awardPoints .
                      checkCollisions .
                      checkPlayerDead .
@@ -192,8 +193,14 @@ checkPlayerDead gs
         | isDead (PlayerObject (player gs)) = gameOver gs
         | otherwise = gs
 
--- awardPoints :: GameState -> GameState
--- awardPoints gs = gs { score = score gs + 1 }
+checkBossDead :: GameState -> GameState
+checkBossDead gs
+        | time gs == -10 && null list = victory gs
+        | otherwise = gs
+    where list = [ x | x@(BossObject _) <- objects gs ]
+
+awardPoints :: GameState -> GameState
+awardPoints gs = gs { score = score gs + 1 }
 
 spawnBasic :: GameState -> GameState
 spawnBasic gs = gs { objects = objects gs ++ [EnemyObject basicEnemy] }
@@ -212,3 +219,6 @@ resumeGame gs = gs { menu = Playing }
 
 gameOver :: GameState -> GameState
 gameOver gs = gs { menu = GameOverMenu }
+
+victory :: GameState -> GameState
+victory gs = gs { menu = VictoryMenu }
