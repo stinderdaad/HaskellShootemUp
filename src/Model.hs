@@ -33,7 +33,7 @@ data Button = Button {
     buttonFunction :: Function
 }
 
-data Function = Resume | Restart | Quit | HighScore | Start
+data Function = Start | HighScore | Quit | Retry | ToMainMenu | Resume
     deriving (Show, Eq)
 
 data Attack = Basic | ItemAttack Item
@@ -196,6 +196,24 @@ basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40
 -- Direction should be towards players position, add later
 -- basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 10 (2, 2)
 basicBullet _ = error "Cannot create bullet from bullet or item"
+
+startButton :: Button
+startButton = Button (Point 0 0) (200, 100) Start
+
+quitButton :: Button
+quitButton = Button (Point 0 (-150)) (200, 100) Quit
+
+highScoreButton :: Button
+highScoreButton = Button (Point 0 (-300)) (200, 100) HighScore
+
+retryButton :: Button
+retryButton = Button (Point 0 0) (200, 100) Retry
+
+mainMenuButton :: Button
+mainMenuButton = Button (Point 0 (-300)) (200, 100) ToMainMenu
+
+resumeButton :: Button
+resumeButton = Button (Point 0 0) (200, 100) Resume
 
 -- # Functions # --
 

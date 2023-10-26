@@ -54,7 +54,7 @@ handleCharKeyDown c gs
         | c == 'w' = movePlayerUp gs
         | c == 's' = movePlayerDown gs
         | c == 'p' && menuState == Playing = pauseGame gs
-        | c == 'p' && menuState == PauseMenu = resumeGame gs
+        | c == 'p' && menuState == PauseMenu = playGame gs
         | otherwise = gs
     where menuState = menu gs
 
@@ -211,11 +211,17 @@ spawnTough gs = gs { objects = objects gs ++ [EnemyObject toughEnemy] }
 spawnBoss :: GameState -> GameState
 spawnBoss gs = gs { objects = objects gs ++ [BossObject basicBoss] }
 
+playGame :: GameState -> GameState
+playGame gs = gs { menu = Playing }
+
 pauseGame :: GameState -> GameState
 pauseGame gs = gs { menu = PauseMenu }
 
-resumeGame :: GameState -> GameState
-resumeGame gs = gs { menu = Playing }
+goToMainMenu :: GameState -> GameState
+goToMainMenu gs = gs { menu = MainMenu }
+
+goToHighScores :: GameState -> GameState
+goToHighScores gs = gs { menu = HighScoresMenu }
 
 gameOver :: GameState -> GameState
 gameOver gs = gs { menu = GameOverMenu }
