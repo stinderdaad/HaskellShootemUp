@@ -18,7 +18,12 @@ data GameState = GameState {
 data Menu = MainMenu | Playing | PauseMenu | GameOverMenu | HighScores
     deriving (Show, Eq)
 
-data Object = PlayerObject Player | EnemyObject Enemy | BossObject Enemy | BulletObject Bullet | ItemObject Item
+data Object = PlayerObject Player |
+              EnemyObject Enemy |
+              BossObject Enemy |
+              BulletObject Bullet |
+              ItemObject Item |
+              DeadObject
 
 
 data Attack = Basic | ItemAttack Item
@@ -150,6 +155,7 @@ objectPosition (EnemyObject enemy) = enemyPosition enemy
 objectPosition (BossObject boss) = enemyPosition boss
 objectPosition (BulletObject bullet) = bulletPosition bullet
 objectPosition (ItemObject item) = itemPosition item
+objectPosition _ = Point 0 0
 
 objectSize :: Object -> (Int, Int)
 objectSize (PlayerObject player) = playerSize player
@@ -157,44 +163,66 @@ objectSize (EnemyObject enemy) = enemySize enemy
 objectSize (BossObject boss) = enemySize boss
 objectSize (BulletObject bullet) = bulletSize bullet
 objectSize (ItemObject item) = itemSize item
+objectSize _ = (0, 0)
 
 initPlayer :: Player
-initPlayer = Player (Point (-600) 0) (Vector 0 0) 5 3 (20, 30) Basic
+initPlayer = Player (Point (-600) 0) (Vector 0 0) 5 3 (25, 50) Basic
 
 -- enemies y should be random
 basicEnemy :: Enemy
-basicEnemy = Enemy (Point 800 0) (Vector (-1) 0) 5 1 (30, 30) Basic 50
+basicEnemy = Enemy (Point 800 0) (Vector (-1) 0) 5 1 (25, 60) Basic 50
 
 toughEnemy :: Enemy
-toughEnemy = Enemy (Point 800 0) (Vector (-1) 0) 3 3 (30, 30) Basic 100
+toughEnemy = Enemy (Point 800 0) (Vector (-1) 0) 3 3 (25, 50) Basic 100
 
 basicBoss :: Enemy
-basicBoss = Enemy (Point 800 0) (Vector (-1) 0) 0.5 20 (100, 100) Basic 1000
+basicBoss = Enemy (Point 800 0) (Vector (-1) 0) 0.5 20 (90, 180) Basic 1000
 
 basicBullet :: Object -> Bullet
-basicBullet (PlayerObject player) = Bullet (playerPosition player) (Vector 1 0) 15 (2, 2)
+basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40, 20)
+    where playerBulletSpawn = Point (x + (fromIntegral w/2.0) + 25) y
+          (Point x y) = playerPosition player
+          (w, _) = playerSize player
 -- Direction should be towards players position, add later
-basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 10 (2, 2)
+-- basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 10 (2, 2)
 basicBullet _ = error "Cannot create bullet from bullet or item"
 
 -- # Functions # --
 
+isPlayer :: Object -> Bool
+isPlayer (PlayerObject _) = True
+isPlayer _ = False
+
+objectCornerNW :: Object -> Position
+objectCornerNW obj = Point (x - (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))
+                    where (Point x y) = objectPosition obj
+                          (w, h) = objectSize obj
+
+objectCornerNE :: Object -> Position
+objectCornerNE obj = Point (x + (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))
+                    where (Point x y) = objectPosition obj
+                          (w, h) = objectSize obj
+
+objectCornerSE :: Object -> Position
+objectCornerSE obj = Point (x + (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))
+                    where (Point x y) = objectPosition obj
+                          (w, h) = objectSize obj
+
+objectCornerSW :: Object -> Position
+objectCornerSW obj = Point (x - (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))
+                    where (Point x y) = objectPosition obj
+                          (w, h) = objectSize obj
+
 objectHitObject :: Object -> Object -> Bool
-objectHitObject obj  = objectHitObject' (objectPosition obj) (objectSize obj)
+objectHitObject obj1 obj2 = objectHitObject' obj1 obj2 ||
+                            objectHitObject' obj2 obj1
 
-objectHitObject' :: Position -> (Int, Int) -> Object -> Bool
-objectHitObject' (Point x y) (w, h) obj =
-    positionInObject (Point (x - (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))) obj ||
-    positionInObject (Point (x + (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))) obj ||
-    positionInObject (Point (x + (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))) obj ||
-    positionInObject (Point (x - (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))) obj
-
-isDead :: Object -> Bool
-isDead (PlayerObject player) = playerHealth player <= 0
-isDead (EnemyObject enemy) = enemyHealth enemy <= 0
-isDead (BossObject boss) = enemyHealth boss <= 0
-isDead (BulletObject bullet) = False
-isDead (ItemObject item) = False
+objectHitObject' :: Object -> Object -> Bool
+objectHitObject' obj1 obj2 =
+    positionInObject (objectCornerNW obj1) obj2 ||
+    positionInObject (objectCornerNE obj1) obj2 ||
+    positionInObject (objectCornerSE obj1) obj2 ||
+    positionInObject (objectCornerSW obj1) obj2
 
 positionInObject :: Position -> Object -> Bool
 positionInObject pos obj = positionInObject' pos (objectPosition obj) (objectSize obj)
@@ -205,3 +233,17 @@ positionInObject' (Point xPos yPos) (Point xObj yObj) (objWidth, objHeight) =
     && xPos <= xObj + (fromIntegral objWidth / 2.0)
     && yPos >= yObj - (fromIntegral objHeight / 2.0)
     && yPos <= yObj + (fromIntegral objHeight / 2.0)
+
+playerHit :: Player -> Player
+playerHit player = player { playerHealth = playerHealth player - 1 }
+
+enemyHit :: Enemy -> Enemy
+enemyHit enemy = enemy { enemyHealth = enemyHealth enemy - 1 }
+
+isDead :: Object -> Bool
+isDead (PlayerObject player) = playerHealth player <= 0
+isDead (EnemyObject enemy) = enemyHealth enemy <= 0
+isDead (BossObject boss) = enemyHealth boss <= 0
+isDead (BulletObject bullet) = False
+isDead (ItemObject item) = False
+isDead DeadObject = True

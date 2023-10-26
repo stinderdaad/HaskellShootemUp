@@ -5,17 +5,25 @@ import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
 step secs gs
-        | menuState == Playing && currentTime == (-10) = return (checkCollision gs {
+        | menuState == Playing &&
+          currentTime == (-10) =
+            print gs >>
+            return (updateGs gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
                         })
-        | menuState == Playing && currentTime <= 0 = return (spawnBoss (checkCollision gs{
+        | menuState == Playing &&
+          currentTime <= 0 =
+            print gs >>
+            return (spawnBoss (updateGs gs{
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
                         }))
-        | menuState == Playing =  return (checkCollision gs {
+        | menuState == Playing =
+            print gs >>
+            return (updateGs gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = currentTime - secs
@@ -23,6 +31,7 @@ step secs gs
         | otherwise = return gs
     where menuState = menu gs
           currentTime = time gs
+          updateGs = removeDeadObjects . checkCollisions
 
 
 input :: Event -> GameState -> IO GameState
@@ -68,13 +77,6 @@ handleSpecialKeyUp KeyRight gs = movePlayerLeft gs
 handleSpecialKeyUp KeyUp gs = movePlayerDown gs
 handleSpecialKeyUp KeyDown gs = movePlayerUp gs
 handleSpecialKeyUp _ gs = gs
-
--- bulletHitObject :: GameState -> Bullet -> Object -> GameState
--- bulletHitObject gs bullet (PlayerObject player) = gs { player = player { playerHealth = playerHealth player - 1 } }
--- bulletHitObject _ _ _ = undefined
-
--- playerDead :: GameState -> Bool
--- playerDead gs = playerHealth (player gs) <= 0
 
 newPosition :: Position -> Direction -> Float -> Position
 newPosition (Point x y) dir speed = Point (x + (dirX * speed)) (y + (dirY * speed))
@@ -130,8 +132,65 @@ updateObjects :: [Object] -> [Object]
 updateObjects = map updateObject
 
 -- placeholder, need to figure out a nice system for collision
-checkCollision :: GameState -> GameState
-checkCollision gs = gs { objects = filter (not . objectHitObject (PlayerObject (player gs))) (objects gs) }
+checkCollisions :: GameState -> GameState
+checkCollisions gs = gs { objects = filter (not . isPlayer) (map (`checkCollisions'` allObjects gs) (allObjects gs)) }
+
+checkCollisions' :: Object -> [Object] -> Object
+checkCollisions' obj [] = obj
+checkCollisions' (PlayerObject player) (BulletObject bullet:ys)
+        | objectHitObject (PlayerObject player) (BulletObject bullet) =
+            PlayerObject (playerHit player)
+        | otherwise = checkCollisions' (PlayerObject player) ys
+checkCollisions' (PlayerObject player) (EnemyObject enemy:ys)
+        | objectHitObject (PlayerObject player) (EnemyObject enemy) =
+            PlayerObject (playerHit player)
+        | otherwise = checkCollisions' (PlayerObject player) ys
+checkCollisions' (PlayerObject player) (BossObject boss:ys)
+        | objectHitObject (PlayerObject player) (BossObject boss) =
+            PlayerObject (playerHit player)
+        | otherwise = checkCollisions' (PlayerObject player) ys
+checkCollisions' (EnemyObject enemy) (BulletObject bullet:ys)
+        | objectHitObject (EnemyObject enemy) (BulletObject bullet) =
+            EnemyObject (enemyHit enemy)
+        | otherwise = checkCollisions' (EnemyObject enemy) ys
+checkCollisions' (EnemyObject enemy) (PlayerObject player:ys)
+        | objectHitObject (EnemyObject enemy) (PlayerObject player) =
+            EnemyObject (enemyHit enemy)
+        | otherwise = checkCollisions' (EnemyObject enemy) ys
+checkCollisions' (BossObject boss) (BulletObject bullet:ys)
+        | objectHitObject (BossObject boss) (BulletObject bullet) =
+            BossObject (enemyHit boss)
+        | otherwise = checkCollisions' (BossObject boss) ys
+checkCollisions' (BossObject boss) (PlayerObject player:ys)
+        | objectHitObject (BossObject boss) (PlayerObject player) =
+            BossObject (enemyHit boss)
+        | otherwise = checkCollisions' (BossObject boss) ys
+checkCollisions' (BulletObject bullet) (PlayerObject player:ys)
+        | objectHitObject (BulletObject bullet) (PlayerObject player) =
+            DeadObject
+        | otherwise = checkCollisions' (BulletObject bullet) ys
+checkCollisions' (BulletObject bullet) (EnemyObject enemy:ys)
+        | objectHitObject (BulletObject bullet) (EnemyObject enemy) =
+            DeadObject
+        | otherwise = checkCollisions' (BulletObject bullet) ys
+checkCollisions' (BulletObject bullet) (BossObject boss:ys)
+        | objectHitObject (BulletObject bullet) (BossObject boss) =
+            DeadObject
+        | otherwise = checkCollisions' (BulletObject bullet) ys
+checkCollisions' obj (_:ys) = checkCollisions' obj ys
+
+-- checkCollisions' _ [] = []
+-- checkCollisions' (PlayerObject player) (BulletObject bullet:ys)
+--         | objectHitObject (PlayerObject player) (BulletObject bullet) =
+--             PlayerObject (playerHit player) :
+--             checkCollisions' (PlayerObject player) ys
+--         | otherwise = checkCollisions' (PlayerObject player) ys
+-- checkCollisions' (PlayerObject player) (EnemyObject enemy:ys)
+--         | objectHitObject (PlayerObject player) (EnemyObject enemy) =
+--             PlayerObject (playerHit player) :
+--             EnemyObject (enemyHit enemy) :
+--             checkCollisions' (PlayerObject player) ys
+--         | otherwise = checkCollisions' (PlayerObject player) ys
 
 removeDeadObjects :: GameState -> GameState
 removeDeadObjects gs = gs { objects = filter (not . isDead) (objects gs) }

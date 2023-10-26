@@ -16,16 +16,31 @@ view gs = do
 objectsToPictures :: [Object] -> (Picture, Picture, Picture, Picture) -> [Picture]
 objectsToPictures [] _ = []
 objectsToPictures (PlayerObject player:xs) sprites@(playerSprite, _, _, _) =
-    objectToPicture (PlayerObject player) (rotate 90 (scale 2 2 playerSprite)) : objectsToPictures xs sprites
+    drawHitBox (PlayerObject player) :
+    objectToPicture (PlayerObject player) (rotate 90 (scale 2 2 playerSprite)) :
+    objectsToPictures xs sprites
 objectsToPictures (EnemyObject enemy:xs) sprites@(_, basicEnemySprite, _, _) =
-    objectToPicture (EnemyObject enemy) (rotate 270 (scale 2 2 basicEnemySprite)) : objectsToPictures xs sprites
+    drawHitBox (EnemyObject enemy) :
+    objectToPicture (EnemyObject enemy) (rotate 270 (scale 2 2 basicEnemySprite)) :
+    objectsToPictures xs sprites
 objectsToPictures (BulletObject bullet:xs) sprites@(_, _, bulletSprite, _) =
-    objectToPicture (BulletObject bullet) (rotate 90 (scale 2 2 bulletSprite)) : objectsToPictures xs sprites
+    drawHitBox (BulletObject bullet) :
+    objectToPicture (BulletObject bullet) (rotate 90 (scale 1.5 1.5 bulletSprite)) :
+    objectsToPictures xs sprites
 objectsToPictures (BossObject boss:xs) sprites@(_, _, _, bossSprite) =
-    objectToPicture (BossObject boss) (rotate 270 (scale 8 8 bossSprite)) : objectsToPictures xs sprites
+    drawHitBox (BossObject boss) :
+    objectToPicture (BossObject boss) (rotate 270 (scale 8 8 bossSprite)) :
+    objectsToPictures xs sprites
+objectsToPictures _ _ = []
 
 objectToPicture :: Object -> Picture -> Picture
 objectToPicture obj = uncurry translate (positionToTuple (objectPosition obj))
+
+drawHitBox :: Object -> Picture
+drawHitBox obj = polygon [positionToTuple (objectCornerNW obj),
+                          positionToTuple (objectCornerNE obj),
+                          positionToTuple (objectCornerSE obj),
+                          positionToTuple (objectCornerSW obj)]
 
 timerToPicture :: GameState -> Picture
 timerToPicture gs
