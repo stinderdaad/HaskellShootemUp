@@ -5,16 +5,14 @@ import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
 step secs gs
-        | menuState == Playing &&
-          currentTime == (-10) =
+        | menuState == Playing && currentTime == (-10) =
             print gs >>
             return (updateGs gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
                         })
-        | menuState == Playing &&
-          currentTime <= 0 =
+        | menuState == Playing && currentTime <= 0 =
             print gs >>
             return (spawnBoss (updateGs gs{
                            player = updatePlayer (player gs),
@@ -178,19 +176,6 @@ checkCollisions' (BulletObject bullet) (BossObject boss:ys)
             DeadObject
         | otherwise = checkCollisions' (BulletObject bullet) ys
 checkCollisions' obj (_:ys) = checkCollisions' obj ys
-
--- checkCollisions' _ [] = []
--- checkCollisions' (PlayerObject player) (BulletObject bullet:ys)
---         | objectHitObject (PlayerObject player) (BulletObject bullet) =
---             PlayerObject (playerHit player) :
---             checkCollisions' (PlayerObject player) ys
---         | otherwise = checkCollisions' (PlayerObject player) ys
--- checkCollisions' (PlayerObject player) (EnemyObject enemy:ys)
---         | objectHitObject (PlayerObject player) (EnemyObject enemy) =
---             PlayerObject (playerHit player) :
---             EnemyObject (enemyHit enemy) :
---             checkCollisions' (PlayerObject player) ys
---         | otherwise = checkCollisions' (PlayerObject player) ys
 
 removeDeadObjects :: GameState -> GameState
 removeDeadObjects gs = gs { objects = filter (not . isDead) (objects gs) }
