@@ -129,7 +129,6 @@ updateObject (ItemObject item) = ItemObject item
 updateObjects :: [Object] -> [Object]
 updateObjects = map updateObject
 
--- placeholder, need to figure out a nice system for collision
 checkCollisions :: GameState -> GameState
 checkCollisions gs = gs { objects = filter (not . isPlayer) (map (`checkCollisions'` allObjects gs) (allObjects gs)) }
 
