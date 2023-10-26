@@ -212,19 +212,19 @@ spawnBoss :: GameState -> GameState
 spawnBoss gs = gs { objects = objects gs ++ [BossObject basicBoss] }
 
 playGame :: GameState -> GameState
-playGame gs = gs { menu = Playing }
+playGame gs = gs { menu = Playing, buttons = noButtons }
 
 pauseGame :: GameState -> GameState
-pauseGame gs = gs { menu = PauseMenu }
+pauseGame gs = gs { menu = PauseMenu, buttons = pauseButtons }
 
 goToMainMenu :: GameState -> GameState
-goToMainMenu gs = gs { menu = MainMenu }
+goToMainMenu gs = gs { menu = MainMenu, buttons = mainMenuButtons }
 
 goToHighScores :: GameState -> GameState
-goToHighScores gs = gs { menu = HighScores }
+goToHighScores gs = gs { menu = HighScores, buttons = highScoresButtons }
 
 gameOver :: GameState -> GameState
-gameOver gs = gs { menu = GameOverMenu }
+gameOver gs = gs { menu = GameOverMenu, buttons = gameOverButtons }
 
 victory :: GameState -> GameState
-victory gs = gs { menu = VictoryMenu }
+victory gs = gs { menu = VictoryMenu, buttons = victoryButtons }

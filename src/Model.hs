@@ -8,6 +8,7 @@ import System.Random
 
 data GameState = GameState {
     menu :: Menu,
+    buttons :: [Button],
     player :: Player,
     objects :: [Object],
     score :: Int,
@@ -27,11 +28,6 @@ data Object = PlayerObject Player |
               ButtonObject Button |
               DeadObject
 
-data Button = Button {
-    buttonPosition :: Position,
-    buttonSize :: (Int, Int),
-    buttonFunction :: Function
-}
 
 data Function = Start | ToHighScore | Quit | Retry | ToMainMenu | Resume
     deriving (Show, Eq)
@@ -77,6 +73,12 @@ data Item = Item {
     bulletQuantity :: Int,
     reloadTimeMultiplier :: Float,
     timer :: Float
+}
+
+data Button = Button {
+    buttonPosition :: Position,
+    buttonSize :: (Int, Int),
+    buttonFunction :: Function
 }
 
 data Settings = Settings {
@@ -146,6 +148,7 @@ instance Show Settings where
 initState :: GameState
 initState = GameState {
     menu = Playing, -- should be main menu later
+    buttons = noButtons, -- should be main menu buttons later
     player = initPlayer,
     objects = [EnemyObject basicEnemy], -- should be empty when spawning works
     score = 0,
@@ -156,6 +159,7 @@ initState = GameState {
 level1 :: Settings
 level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
 
+-- not including buttons
 allObjects :: GameState -> [Object]
 allObjects gs = PlayerObject(player gs) : objects gs
 
@@ -165,6 +169,7 @@ objectPosition (EnemyObject enemy) = enemyPosition enemy
 objectPosition (BossObject boss) = enemyPosition boss
 objectPosition (BulletObject bullet) = bulletPosition bullet
 objectPosition (ItemObject item) = itemPosition item
+objectPosition (ButtonObject button) = buttonPosition button
 objectPosition _ = Point 0 0
 
 objectSize :: Object -> (Int, Int)
@@ -173,6 +178,7 @@ objectSize (EnemyObject enemy) = enemySize enemy
 objectSize (BossObject boss) = enemySize boss
 objectSize (BulletObject bullet) = bulletSize bullet
 objectSize (ItemObject item) = itemSize item
+objectSize (ButtonObject button) = buttonSize button
 objectSize _ = (0, 0)
 
 initPlayer :: Player
@@ -214,6 +220,24 @@ mainMenuButton = Button (Point 0 (-300)) (200, 100) ToMainMenu
 
 resumeButton :: Button
 resumeButton = Button (Point 0 0) (200, 100) Resume
+
+noButtons :: [Button]
+noButtons = []
+
+mainMenuButtons :: [Button]
+mainMenuButtons = [startButton, quitButton, highScoreButton]
+
+gameOverButtons :: [Button]
+gameOverButtons = [retryButton, quitButton, mainMenuButton]
+
+pauseButtons :: [Button]
+pauseButtons = [resumeButton, quitButton, mainMenuButton]
+
+victoryButtons :: [Button]
+victoryButtons = gameOverButtons
+
+highScoresButtons :: [Button]
+highScoresButtons = [mainMenuButton]
 
 -- # Functions # --
 
