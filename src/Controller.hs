@@ -29,7 +29,11 @@ step secs gs
         | otherwise = return gs
     where menuState = menu gs
           currentTime = time gs
-          updateGs = removeDeadObjects . checkCollisions
+          updateGs = removeDeadObjects .
+                     awardPoints .
+                     checkCollisions .
+                     checkPlayerDead .
+                     checkCollisionPlayer
 
 
 input :: Event -> GameState -> IO GameState
@@ -132,6 +136,10 @@ updateObjects = map updateObject
 checkCollisions :: GameState -> GameState
 checkCollisions gs = gs { objects = filter (not . isPlayer) (map (`checkCollisions'` allObjects gs) (allObjects gs)) }
 
+checkCollisionPlayer :: GameState -> GameState
+checkCollisionPlayer gs = gs { player = hitPlayer }
+    where (PlayerObject hitPlayer) = checkCollisions' (PlayerObject (player gs)) (allObjects gs)
+
 checkCollisions' :: Object -> [Object] -> Object
 checkCollisions' obj [] = obj
 checkCollisions' (PlayerObject player) (BulletObject bullet:ys)
@@ -178,6 +186,14 @@ checkCollisions' obj (_:ys) = checkCollisions' obj ys
 
 removeDeadObjects :: GameState -> GameState
 removeDeadObjects gs = gs { objects = filter (not . isDead) (objects gs) }
+
+checkPlayerDead :: GameState -> GameState
+checkPlayerDead gs
+        | isDead (PlayerObject (player gs)) = gameOver gs
+        | otherwise = gs
+
+-- awardPoints :: GameState -> GameState
+-- awardPoints gs = gs { score = score gs + 1 }
 
 spawnBasic :: GameState -> GameState
 spawnBasic gs = gs { objects = objects gs ++ [EnemyObject basicEnemy] }
