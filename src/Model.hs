@@ -310,3 +310,13 @@ isDead (BossObject boss) = enemyHealth boss <= 0
 isDead (BulletObject bullet) = False
 isDead (ItemObject item) = False
 isDead DeadObject = True
+
+countPoints :: [Object] -> Int
+countPoints [] = 0
+countPoints (EnemyObject enemy:xs)
+        | isDead (EnemyObject enemy) = pointsWorth enemy + countPoints xs
+        | otherwise = countPoints xs
+countPoints (BossObject boss:xs)
+        | isDead (BossObject boss) = pointsWorth boss + countPoints xs
+        | otherwise = countPoints xs
+countPoints (_:xs) = countPoints xs

@@ -204,7 +204,7 @@ checkBossDead gs
     where list = [ x | x@(BossObject _) <- objects gs ]
 
 awardPoints :: GameState -> GameState
-awardPoints gs = gs { score = score gs + 1 }
+awardPoints gs = gs { score = score gs + countPoints (objects gs) }
 
 spawnBasic :: GameState -> GameState
 spawnBasic gs = gs { objects = objects gs ++ [EnemyObject basicEnemy] }
