@@ -14,6 +14,7 @@ view gs = do
             objectsToPictures (allObjects gs) (playerSprite, basicEnemySprite, bulletSprite, bossSprite) ++
             [timerToPicture gs] ++
             [scoreToPicture gs] ++
+            [livesToPicture gs] ++
             buttonsToPictures (buttons gs)
             ))
 
@@ -87,6 +88,10 @@ timerToPicture gs
 scoreToPicture :: GameState -> Picture
 scoreToPicture gs = translate (-700) 300 (scale 0.2 0.2 pic)
     where pic = text ("Score: " ++ show (score gs))
+
+livesToPicture :: GameState -> Picture
+livesToPicture gs = translate 500 300 (scale 0.2 0.2 pic)
+    where pic = text ("Lives left: " ++ show (playerHealth (player gs)))
 
 -- Sprites
 
