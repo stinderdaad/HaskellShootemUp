@@ -1,6 +1,7 @@
 module Controller where
 
 import Model
+import Data.Maybe
 import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
@@ -45,6 +46,7 @@ input event gs = do
         EventKey (Char c) Up _ _ -> handleCharKeyUp c gs
         EventKey (SpecialKey key) Down _ _ -> handleSpecialKeyDown key gs
         EventKey (SpecialKey key) Up _ _ -> handleSpecialKeyUp key gs
+        EventKey (MouseButton LeftButton) Down _ (x, y) -> checkButtonPress gs (Point x y)
         _ -> gs
 
 handleCharKeyDown :: Char -> GameState -> GameState
@@ -211,6 +213,30 @@ spawnTough gs = gs { objects = objects gs ++ [EnemyObject toughEnemy] }
 spawnBoss :: GameState -> GameState
 spawnBoss gs = gs { objects = objects gs ++ [BossObject basicBoss] }
 
+checkButtonPress :: GameState -> Position -> GameState
+checkButtonPress gs pos
+        | isNothing button = gs
+        | otherwise = buttonPressed gs (fromJust button)
+    where button = checkButtonPress' gs pos
+
+checkButtonPress' :: GameState -> Position -> Maybe Button
+checkButtonPress' gs = checkButtonPress'' (buttons gs)
+
+checkButtonPress'' :: [Button] -> Position -> Maybe Button
+checkButtonPress'' [] _ = Nothing
+checkButtonPress'' (x:xs) pos
+        | positionInObject pos (ButtonObject x) = Just x
+        | otherwise = checkButtonPress'' xs pos
+
+buttonPressed :: GameState -> Button -> GameState
+buttonPressed gs (Button _ _ Start) = playGame gs
+-- buttonPressed gs (Button _ _ Quit) = quitGame
+buttonPressed gs (Button _ _ ToHighScore) = goToHighScores gs
+buttonPressed gs (Button _ _ Retry) = playGame gs
+buttonPressed gs (Button _ _ Resume) = playGame gs
+buttonPressed gs (Button _ _ ToMainMenu) = goToMainMenu gs
+buttonPressed gs _ = gs
+
 playGame :: GameState -> GameState
 playGame gs = gs { menu = Playing, buttons = noButtons }
 
@@ -228,3 +254,6 @@ gameOver gs = gs { menu = GameOverMenu, buttons = gameOverButtons }
 
 victory :: GameState -> GameState
 victory gs = gs { menu = VictoryMenu, buttons = victoryButtons }
+
+-- quitGame :: IO ()
+-- quitGame = putStrLn "Quitting game..." >> return ()

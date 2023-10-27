@@ -157,7 +157,7 @@ initState = GameState {
 }
 
 level1 :: Settings
-level1 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
+level1 = Settings 1 1 [basicEnemy] basicBoss
 
 -- not including buttons
 allObjects :: GameState -> [Object]
@@ -204,22 +204,22 @@ basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40
 basicBullet _ = error "Cannot create bullet from bullet or item"
 
 startButton :: Button
-startButton = Button (Point 0 0) (200, 100) Start
+startButton = Button (Point 0 75) (200, 50) Start
 
 quitButton :: Button
-quitButton = Button (Point 0 (-150)) (200, 100) Quit
+quitButton = Button (Point 0 0) (200, 50) Quit
 
 highScoreButton :: Button
-highScoreButton = Button (Point 0 (-300)) (200, 100) ToHighScore
+highScoreButton = Button (Point 0 (-75)) (200, 50) ToHighScore
 
 retryButton :: Button
-retryButton = Button (Point 0 0) (200, 100) Retry
+retryButton = Button (Point 0 75) (200, 50) Retry
 
 mainMenuButton :: Button
-mainMenuButton = Button (Point 0 (-300)) (200, 100) ToMainMenu
+mainMenuButton = Button (Point 0 (-75)) (200, 50) ToMainMenu
 
 resumeButton :: Button
-resumeButton = Button (Point 0 0) (200, 100) Resume
+resumeButton = Button (Point 0 75) (200, 50) Resume
 
 noButtons :: [Button]
 noButtons = []

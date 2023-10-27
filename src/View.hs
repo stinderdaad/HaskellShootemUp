@@ -20,19 +20,19 @@ view gs = do
 objectsToPictures :: [Object] -> (Picture, Picture, Picture, Picture) -> [Picture]
 objectsToPictures [] _ = []
 objectsToPictures (PlayerObject player:xs) sprites@(playerSprite, _, _, _) =
-    Color green (drawBox (PlayerObject player)) :
+    Color green (drawBox (PlayerObject player)) : -- hitbox
     objectToPicture (PlayerObject player) (rotate 90 (scale 2 2 playerSprite)) :
     objectsToPictures xs sprites
 objectsToPictures (EnemyObject enemy:xs) sprites@(_, basicEnemySprite, _, _) =
-    Color red (drawBox (EnemyObject enemy)) :
+    Color red (drawBox (EnemyObject enemy)) : -- hitbox
     objectToPicture (EnemyObject enemy) (rotate 270 (scale 2 2 basicEnemySprite)) :
     objectsToPictures xs sprites
 objectsToPictures (BulletObject bullet:xs) sprites@(_, _, bulletSprite, _) =
-    Color black (drawBox (BulletObject bullet)) :
+    Color black (drawBox (BulletObject bullet)) :  -- hitbox
     objectToPicture (BulletObject bullet) (rotate 90 (scale 1.5 1.5 bulletSprite)) :
     objectsToPictures xs sprites
 objectsToPictures (BossObject boss:xs) sprites@(_, _, _, bossSprite) =
-    Color red (drawBox (BossObject boss)) :
+    Color red (drawBox (BossObject boss)) : -- hitbox
     objectToPicture (BossObject boss) (rotate 270 (scale 8 8 bossSprite)) :
     objectsToPictures xs sprites
 objectsToPictures _ _ = []
@@ -47,14 +47,12 @@ buttonsToPictures (x:xs) = Color white (buttonToPicture (ButtonObject x)) :
                            buttonsToPictures xs
 
 buttonToPicture :: Object -> Picture
-buttonToPicture (ButtonObject button) = uncurry translate pos pic
-    where pos = positionToTuple (objectPosition (ButtonObject button))
-          pic = drawBox (ButtonObject button)
+buttonToPicture (ButtonObject button) = drawBox (ButtonObject button)
 buttonToPicture _ = Blank
 
 buttonTextToPicture :: Object -> Picture
-buttonTextToPicture (ButtonObject button) = uncurry translate pos pic
-    where pos = positionToTuple (objectPosition (ButtonObject button))
+buttonTextToPicture (ButtonObject button) = translate (x - 75) y pic
+    where (x, y) = positionToTuple (objectPosition (ButtonObject button))
           pic = scale 0.2 0.2 (text (buttonText button))
 
 buttonText :: Button -> String
@@ -75,11 +73,11 @@ drawBox obj = polygon [positionToTuple (objectCornerNW obj),
 
 timerToPicture :: GameState -> Picture
 timerToPicture gs
-    | menu gs == GameOverMenu = translate 0 300 (scale 0.2 0.2 gameOver)
-    | menu gs == PauseMenu = translate 0 300 (scale 0.2 0.2 pause)
-    | menu gs == VictoryMenu = translate 0 300 (scale 0.2 0.2 victory)
+    | menu gs == GameOverMenu = translate (-50) 300 (scale 0.2 0.2 gameOver)
+    | menu gs == PauseMenu = translate (-50) 300 (scale 0.2 0.2 pause)
+    | menu gs == VictoryMenu = translate (-50) 300 (scale 0.2 0.2 victory)
     | time gs == -10 = translate (-50) 300 (scale 0.2 0.2 boss)
-    | otherwise = translate 0 300 (scale 0.2 0.2 pic)
+    | otherwise = translate (-100) 300 (scale 0.2 0.2 pic)
     where pic = text ("Time until boss: " ++ show (floorFloat (time gs)))
           boss = text "Boss Battle!"
           pause = text "Paused"
