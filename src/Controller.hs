@@ -3,28 +3,30 @@ module Controller where
 import Model
 import Data.Maybe
 import System.Exit
+import System.Random
 import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
 step secs gs
         | menuState == Quitting = exitSuccess
         | menuState == Playing && currentTime == (-10) =
-            print gs >>
+            -- print gs >>
             return (updateGs gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
                         })
         | menuState == Playing && currentTime <= 0 =
-            print gs >>
+            -- print gs >>
             return ((updateGs . spawnBoss) gs{
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = -10
                         })
-        | menuState == Playing =
-            print gs >>
-            return (updateGs gs {
+        | menuState == Playing = do
+            randomFloat <- randomIO :: IO Float
+            -- print gs >>
+            return ((updateGs . spawnEnemiesItems (randomFloat * 800 - 400))gs {
                            player = updatePlayer (player gs),
                            objects = updateObjects (objects gs),
                            time = currentTime - secs
@@ -39,10 +41,9 @@ step secs gs
                      checkPlayerDead .
                      checkCollisionPlayer
 
-
 input :: Event -> GameState -> IO GameState
 input event gs = do
-    putStrLn $ "Received event: " ++ show event
+    -- putStrLn $ "Received event: " ++ show event
     return $ case event of
         EventKey (Char c) Down _ _ -> handleCharKeyDown c gs
         EventKey (Char c) Up _ _ -> handleCharKeyUp c gs
@@ -138,6 +139,9 @@ updateObject (ItemObject item) = ItemObject item
 updateObjects :: [Object] -> [Object]
 updateObjects = map updateObject
 
+spawnEnemiesItems :: Float -> GameState -> GameState
+spawnEnemiesItems = spawnBasic
+
 checkCollisions :: GameState -> GameState
 checkCollisions gs = gs { objects = filter (not . isPlayer) (map (`checkCollisions'` allObjects gs) (allObjects gs)) }
 
@@ -206,11 +210,11 @@ checkBossDead gs
 awardPoints :: GameState -> GameState
 awardPoints gs = gs { score = score gs + countPoints (objects gs) }
 
-spawnBasic :: GameState -> GameState
-spawnBasic gs = gs { objects = objects gs ++ [EnemyObject basicEnemy] }
+spawnBasic :: Float -> GameState -> GameState
+spawnBasic yPos gs = gs { objects = objects gs ++ [EnemyObject basicEnemy { enemyPosition = Point 800 yPos }] }
 
-spawnTough :: GameState -> GameState
-spawnTough gs = gs { objects = objects gs ++ [EnemyObject toughEnemy] }
+spawnTough :: Float -> GameState -> GameState
+spawnTough yPos gs = gs { objects = objects gs ++ [EnemyObject toughEnemy { enemyPosition = Point 800 yPos }] }
 
 spawnBoss :: GameState -> GameState
 spawnBoss gs = gs { objects = objects gs ++ [BossObject basicBoss] }
