@@ -68,7 +68,7 @@ buttonText (Button _ _ ToHighScore) = "High Scores"
 buttonText (Button _ _ Retry) = "Retry"
 buttonText (Button _ _ Resume) = "Resume"
 buttonText (Button _ _ ToMainMenu) = "Main Menu"
-buttonText _ = "Button"
+-- buttonText _ = "Button"
 
 -- handy for hitboxes and buttons
 drawBox :: Object -> Picture

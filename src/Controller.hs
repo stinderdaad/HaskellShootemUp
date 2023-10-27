@@ -14,23 +14,24 @@ step secs gs
         | menuState == Playing && currentTime == (-10) =
             -- print gs >>
             return (updateGs gs {
-                           player = updatePlayer (player gs),
-                           objects = updateObjects (objects gs),
+                           player = updatePlayer secs (player gs),
+                           objects = updateObjects secs (objects gs),
                            time = -10
                         })
         | menuState == Playing && currentTime <= 0 =
             -- print gs >>
             return ((updateGs . spawnBoss) gs{
-                           player = updatePlayer (player gs),
-                           objects = updateObjects (objects gs),
+                           player = updatePlayer secs (player gs),
+                           objects = updateObjects secs (objects gs),
                            time = -10
                         })
         | menuState == Playing = do
-            randomFloat <- randomIO :: IO Float
+            randomFloat1 <- randomIO :: IO Float
+            randomFloat2 <- randomIO :: IO Float
             -- print gs >>
-            return ((updateGs . spawnEnemiesItems (randomFloat * 800 - 400))gs {
-                           player = updatePlayer (player gs),
-                           objects = updateObjects (objects gs),
+            return ((updateGs . spawnEnemiesItems randomFloat1 randomFloat2) gs {
+                           player = updatePlayer secs (player gs),
+                           objects = updateObjects secs (objects gs),
                            time = currentTime - secs
                         })
         | otherwise = return gs
@@ -41,7 +42,8 @@ step secs gs
                      awardPoints .
                      checkCollisions .
                      checkPlayerDead .
-                     checkCollisionPlayer
+                     checkCollisionPlayer .
+                     shooting
 
 input :: Event -> GameState -> IO GameState
 input event gs = do
@@ -55,8 +57,7 @@ input event gs = do
         _ -> gs
 
 
--- # Pure Functions # --
--- Not sure how many of these should actually be in Model
+-- # Input Functions # --
 
 handleCharKeyDown :: Char -> GameState -> GameState
 handleCharKeyDown c gs
@@ -82,7 +83,7 @@ handleSpecialKeyDown KeyLeft gs = movePlayerLeft gs
 handleSpecialKeyDown KeyRight gs = movePlayerRight gs
 handleSpecialKeyDown KeyUp gs = movePlayerUp gs
 handleSpecialKeyDown KeyDown gs = movePlayerDown gs
-handleSpecialKeyDown KeySpace gs = shoot gs -- maybe auto shoot? no reason not to spam
+-- handleSpecialKeyDown KeySpace gs = shooting gs -- maybe auto shoot? no reason not to spam
 handleSpecialKeyDown _ gs = gs
 
 handleSpecialKeyUp :: SpecialKey -> GameState -> GameState
@@ -91,6 +92,10 @@ handleSpecialKeyUp KeyRight gs = movePlayerLeft gs
 handleSpecialKeyUp KeyUp gs = movePlayerDown gs
 handleSpecialKeyUp KeyDown gs = movePlayerUp gs
 handleSpecialKeyUp _ gs = gs
+
+
+-- # Pure Functions # --
+-- Not sure how many of these should actually be in Model
 
 newPosition :: Position -> Direction -> Float -> Position
 newPosition (Point x y) dir speed = Point (x + (dirX * speed)) (y + (dirY * speed))
@@ -122,31 +127,50 @@ movePlayerDown :: GameState -> GameState
 movePlayerDown gs = gs { player = (player gs) {
     playerDirection = addDirections (playerDirection (player gs))  (Vector 0 (-1)) } }
 
-shoot :: GameState -> GameState
-shoot gs | menu gs == Playing = gs { objects = objects gs ++
-            [BulletObject (basicBullet (PlayerObject (player gs)))] }
-        | otherwise = gs
+shooting :: GameState -> GameState
+shooting gs | menu gs == Playing = gs { objects = concat [shoot obj | obj <- allObjects gs]
+                                     }
+            | otherwise = gs
 
-updatePlayer :: Player -> Player
-updatePlayer player = player {
-    playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player) }
+updatePlayer :: Float -> Player -> Player
+updatePlayer secs player = player {
+    playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player),
+    playerTimeToReload = playerTimeToReload player - secs
+}
 
-updateObject :: Object -> Object
-updateObject (BulletObject bullet) = BulletObject bullet {
+updateObject :: Float -> Object -> Object
+updateObject _ (BulletObject bullet) = BulletObject bullet {
     bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }
-updateObject (PlayerObject player) = PlayerObject player {
-    playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player) }
-updateObject (EnemyObject enemy) = EnemyObject enemy {
-    enemyPosition = newPosition (enemyPosition enemy) (enemyDirection enemy) (enemySpeed enemy) }
-updateObject (BossObject boss) = BossObject boss {
-    enemyPosition = newPosition (enemyPosition boss) (enemyDirection boss) (enemySpeed boss) }
-updateObject (ItemObject item) = ItemObject item
+updateObject secs (PlayerObject player) = PlayerObject player {
+    playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player),
+    playerTimeToReload = playerTimeToReload player - secs
+}
+updateObject secs (EnemyObject enemy) = EnemyObject enemy {
+    enemyPosition = newPosition (enemyPosition enemy) (enemyDirection enemy) (enemySpeed enemy),
+    enemyTimeToReload = enemyTimeToReload enemy - secs
+}
+updateObject secs (BossObject boss) = BossObject boss {
+    enemyPosition = newPosition (enemyPosition boss) (enemyDirection boss) (enemySpeed boss),
+    enemyTimeToReload = enemyTimeToReload boss - secs
+}
+updateObject secs (ItemObject item) = ItemObject item
 
-updateObjects :: [Object] -> [Object]
-updateObjects = map updateObject
+updateObjects :: Float -> [Object] -> [Object]
+updateObjects secs = map (updateObject secs)
 
-spawnEnemiesItems :: Float -> GameState -> GameState
-spawnEnemiesItems = spawnBasic
+spawnEnemiesItems :: Float -> Float -> GameState -> GameState
+spawnEnemiesItems randomFloat1 randomFloat2 gs
+        | elem toughEnemy enemies' &&
+          (randomFloat1/enemySpawnRate') < 0.01
+          = spawnTough randomPos gs
+        | elem basicEnemy enemies' &&
+          (randomFloat1/enemySpawnRate') < 0.1
+          = spawnBasic randomPos gs
+        | otherwise = gs
+    where randomPos = randomFloat2 * 800 - 400
+          itemSpawnRate' = itemSpawnRate (settings gs)
+          enemySpawnRate' = enemySpawnRate (settings gs)
+          enemies' = enemies (settings gs)
 
 checkCollisions :: GameState -> GameState
 checkCollisions gs = gs { objects = filter (not . isPlayer) (map (`checkCollisions'` allObjects gs) (allObjects gs)) }

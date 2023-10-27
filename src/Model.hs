@@ -36,7 +36,7 @@ data Attack = Basic | ItemAttack Item
     deriving (Show)
 
 data Position = Point Float Float
-    deriving (Show)
+    deriving (Show, Eq)
 
 data Direction = Vector Float Float
     deriving (Show)
@@ -47,7 +47,8 @@ data Player = Player {
     playerSpeed :: Float,
     playerHealth :: Int,
     playerSize :: (Int, Int),
-    playerAttack :: Attack
+    playerAttack :: Attack,
+    playerTimeToReload :: Float
 }
 
 data Enemy = Enemy {
@@ -57,14 +58,16 @@ data Enemy = Enemy {
     enemyHealth :: Int,
     enemySize :: (Int, Int),
     enemyAttack :: Attack,
-    pointsWorth :: Int
+    pointsWorth :: Int,
+    enemyTimeToReload :: Float
 }
 
 data Bullet = Bullet {
     bulletPosition :: Position,
     bulletDirection :: Direction,
     bulletSpeed :: Float,
-    bulletSize :: (Int, Int)
+    bulletSize :: (Int, Int),
+    reloadTime :: Float
 }
 
 data Item = Item {
@@ -73,7 +76,7 @@ data Item = Item {
     bulletQuantity :: Int,
     reloadTimeMultiplier :: Float,
     timer :: Float
-}
+} deriving (Eq)
 
 data Button = Button {
     buttonPosition :: Position,
@@ -89,7 +92,7 @@ data Settings = Settings {
 }
 
 
--- # Show (for Testing) # --
+-- # Show (for Testing) & Eq when needed # --
 
 instance Show GameState where
     show gs = "GameState { time: " ++ show (time gs)
@@ -122,6 +125,20 @@ instance Show Enemy where
                  ++ ", speed: " ++ show (enemySpeed enemy)
                  ++ ", pointsWorth: " ++ show (pointsWorth enemy)
                  ++ " }"
+
+instance Eq Enemy where
+    (==) enemy1 enemy2 =
+        enemyPosition enemy1 == enemyPosition enemy2 &&
+        enemySpeed enemy1 == enemySpeed enemy2 &&
+        enemyHealth enemy1 == enemyHealth enemy2 &&
+        enemySize enemy1 == enemySize enemy2 &&
+        enemyAttack enemy1 == enemyAttack enemy2 &&
+        pointsWorth enemy1 == pointsWorth enemy2
+
+instance Eq Attack where
+    (==) Basic Basic = True
+    (==) (ItemAttack item1) (ItemAttack item2) = item1 == item2
+    (==) _ _ = False
 
 instance Show Bullet where
     show bullet = "Bullet { position: " ++ show (bulletPosition bullet)
@@ -166,32 +183,40 @@ initLevel = GameState {
     objects = [],
     score = 0,
     time = 3,
-    settings = level1
+    settings = level2
 }
 
 level1 :: Settings
-level1 = Settings 1 1 [basicEnemy] basicBoss
+level1 = Settings 0.5 0.5 [basicEnemy] basicBoss
+
+level2 :: Settings
+level2 = Settings 1.0 1.0 [basicEnemy, toughEnemy] basicBoss
 
 initPlayer :: Player
-initPlayer = Player (Point (-600) 0) (Vector 0 0) 5 3 (25, 50) Basic
+initPlayer = Player (Point (-600) 0) (Vector 0 0) 5 3 (25, 50) Basic 0
 
--- enemies y should be random
 basicEnemy :: Enemy
-basicEnemy = Enemy (Point 800 0) (Vector (-1) 0) 5 1 (25, 60) Basic 50
+basicEnemy = Enemy (Point 800 0) (Vector (-1) 0) 5 3 (25, 60) Basic 50 0
 
 toughEnemy :: Enemy
-toughEnemy = Enemy (Point 800 0) (Vector (-1) 0) 3 3 (25, 50) Basic 100
+toughEnemy = Enemy (Point 800 0) (Vector (-1) 0) 2.5 10 (50, 120) Basic 200 0
 
 basicBoss :: Enemy
-basicBoss = Enemy (Point 800 0) (Vector (-1) 0) 0.5 20 (90, 180) Basic 1000
+basicBoss = Enemy (Point 800 0) (Vector (-1) 0) 0.5 50 (90, 180) Basic 1000 0
 
 basicBullet :: Object -> Bullet
-basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40, 20)
+basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40, 20) 0.2
     where playerBulletSpawn = Point (x + (fromIntegral w/2.0) + 25) y
           (Point x y) = playerPosition player
           (w, _) = playerSize player
--- Direction should be towards players position, add later
--- basicBullet (EnemyObject enemy) = Bullet (enemyPosition enemy) (Vector (-1) 0) 10 (2, 2)
+basicBullet (EnemyObject enemy) = Bullet enemyBulletSpawn (Vector (-1) 0) 10 (2, 2) 0.5
+    where enemyBulletSpawn = Point (x - (fromIntegral w/2.0) - 25) y
+          (Point x y) = enemyPosition enemy
+          (w, _) = enemySize enemy
+basicBullet (BossObject boss) = Bullet bossBulletSpawn (Vector (-1) 0) 10 (2, 2) 0.1
+    where bossBulletSpawn = Point (x - (fromIntegral w/2.0) - 25) y
+          (Point x y) = enemyPosition boss
+          (w, _) = enemySize boss
 basicBullet _ = error "Cannot create bullet from bullet or item"
 
 startButton :: Button
@@ -232,6 +257,31 @@ highScoresButtons = [mainMenuButton]
 
 
 -- # Functions # --
+
+shoot :: Object -> [Object]
+shoot obj@(PlayerObject player)
+    | playerTimeToReload player > 0 = []
+    | playerAttack player == Basic = [BulletObject (basicBullet obj)]
+    | otherwise = []
+shoot obj@(EnemyObject enemy)
+    | enemyTimeToReload enemy > 0 = [obj]
+    | enemyAttack enemy == Basic = EnemyObject enemy{ enemyTimeToReload = reloadTime (basicBullet obj) } :
+                                   [BulletObject (basicBullet obj)]
+    | otherwise = [obj]
+shoot obj@(BossObject boss)
+    | enemyTimeToReload boss > 0 = [obj]
+    | enemyAttack boss == Basic = BossObject boss{ enemyTimeToReload = reloadTime (basicBullet obj) } :
+                                  [BulletObject (basicBullet obj)]
+    | otherwise = [obj]
+shoot obj = [obj]
+
+-- playerShoot :: GameState -> GameState
+-- playerShoot gs
+--         | playerTimeToReload player' > 0 = gs
+--         | playerAttack player' == Basic = gs {
+--             objects = objects ++ shoot (PlayerObject player'),
+--         }
+--     where player' = player gs
 
 -- not including buttons
 allObjects :: GameState -> [Object]
