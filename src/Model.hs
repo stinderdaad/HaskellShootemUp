@@ -4,7 +4,7 @@ import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Data.Point
 import System.Random
 
--- Data structures
+-- # Data structures # --
 
 data GameState = GameState {
     menu :: Menu,
@@ -88,7 +88,8 @@ data Settings = Settings {
     boss :: Enemy
 }
 
--- Show (for Testing)
+
+-- # Show (for Testing) # --
 
 instance Show GameState where
     show gs = "GameState { time: " ++ show (time gs)
@@ -143,6 +144,7 @@ instance Show Settings where
                     ++ ", boss: " ++ show (boss settings)
                     ++ " }"
 
+
 -- # Initialisations # --
 
 initState :: GameState
@@ -161,7 +163,7 @@ initLevel = GameState {
     menu = Playing,
     buttons = noButtons,
     player = initPlayer,
-    objects = [EnemyObject basicEnemy],
+    objects = [],
     score = 0,
     time = 3,
     settings = level1
@@ -169,28 +171,6 @@ initLevel = GameState {
 
 level1 :: Settings
 level1 = Settings 1 1 [basicEnemy] basicBoss
-
--- not including buttons
-allObjects :: GameState -> [Object]
-allObjects gs = PlayerObject(player gs) : objects gs
-
-objectPosition :: Object -> Position
-objectPosition (PlayerObject player) = playerPosition player
-objectPosition (EnemyObject enemy) = enemyPosition enemy
-objectPosition (BossObject boss) = enemyPosition boss
-objectPosition (BulletObject bullet) = bulletPosition bullet
-objectPosition (ItemObject item) = itemPosition item
-objectPosition (ButtonObject button) = buttonPosition button
-objectPosition _ = Point 0 0
-
-objectSize :: Object -> (Int, Int)
-objectSize (PlayerObject player) = playerSize player
-objectSize (EnemyObject enemy) = enemySize enemy
-objectSize (BossObject boss) = enemySize boss
-objectSize (BulletObject bullet) = bulletSize bullet
-objectSize (ItemObject item) = itemSize item
-objectSize (ButtonObject button) = buttonSize button
-objectSize _ = (0, 0)
 
 initPlayer :: Player
 initPlayer = Player (Point (-600) 0) (Vector 0 0) 5 3 (25, 50) Basic
@@ -250,7 +230,30 @@ victoryButtons = [retryButton, highScoreButton, mainMenuButton]
 highScoresButtons :: [Button]
 highScoresButtons = [mainMenuButton]
 
+
 -- # Functions # --
+
+-- not including buttons
+allObjects :: GameState -> [Object]
+allObjects gs = PlayerObject(player gs) : objects gs
+
+objectPosition :: Object -> Position
+objectPosition (PlayerObject player) = playerPosition player
+objectPosition (EnemyObject enemy) = enemyPosition enemy
+objectPosition (BossObject boss) = enemyPosition boss
+objectPosition (BulletObject bullet) = bulletPosition bullet
+objectPosition (ItemObject item) = itemPosition item
+objectPosition (ButtonObject button) = buttonPosition button
+objectPosition _ = Point 0 0
+
+objectSize :: Object -> (Int, Int)
+objectSize (PlayerObject player) = playerSize player
+objectSize (EnemyObject enemy) = enemySize enemy
+objectSize (BossObject boss) = enemySize boss
+objectSize (BulletObject bullet) = bulletSize bullet
+objectSize (ItemObject item) = itemSize item
+objectSize (ButtonObject button) = buttonSize button
+objectSize _ = (0, 0)
 
 isPlayer :: Object -> Bool
 isPlayer (PlayerObject _) = True

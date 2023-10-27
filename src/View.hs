@@ -3,6 +3,8 @@ module View where
 import Graphics.Gloss
 import Model
 
+-- # Impure # --
+
 view :: GameState -> IO Picture
 view gs = do
 --     putStrLn $ "Rendering with GameState: " ++ show gs
@@ -17,6 +19,9 @@ view gs = do
             [livesToPicture gs] ++
             buttonsToPictures (buttons gs)
             ))
+
+
+-- # Pictures # --
 
 objectsToPictures :: [Object] -> (Picture, Picture, Picture, Picture) -> [Picture]
 objectsToPictures [] _ = []
@@ -93,7 +98,8 @@ livesToPicture :: GameState -> Picture
 livesToPicture gs = translate 500 300 (scale 0.2 0.2 pic)
     where pic = text ("Lives left: " ++ show (playerHealth (player gs)))
 
--- Sprites
+
+-- # Sprites # --
 
 loadPlayerSprite :: IO Picture
 loadPlayerSprite = loadBMP "./sprites/Ships/PlayerShip.bmp"
@@ -107,7 +113,8 @@ loadBulletSprite = loadBMP "./sprites/Misc/Bullet.bmp"
 loadBossSprite :: IO Picture
 loadBossSprite = loadBMP "./sprites/Ships/EnemyKamikaze.bmp"
 
--- Helper Functions
+
+-- # Helper Functions # --
 
 positionToTuple :: Position -> (Float, Float)
 positionToTuple (Point x y) = (x, y)

@@ -6,6 +6,8 @@ import System.Exit
 import System.Random
 import Graphics.Gloss.Interface.IO.Game
 
+-- # Impure # --
+
 step :: Float -> GameState -> IO GameState
 step secs gs
         | menuState == Quitting = exitSuccess
@@ -51,6 +53,10 @@ input event gs = do
         EventKey (SpecialKey key) Up _ _ -> handleSpecialKeyUp key gs
         EventKey (MouseButton LeftButton) Down _ (x, y) -> checkButtonPress gs (Point x y)
         _ -> gs
+
+
+-- # Pure Functions # --
+-- Not sure how many of these should actually be in Model
 
 handleCharKeyDown :: Char -> GameState -> GameState
 handleCharKeyDown c gs
@@ -242,6 +248,9 @@ buttonPressed gs (Button _ _ Retry) = playGame gs
 buttonPressed gs (Button _ _ Resume) = resumeGame gs
 buttonPressed gs (Button _ _ ToMainMenu) = goToMainMenu gs
 -- buttonPressed gs _ = gs
+
+
+-- # Menu Functions # --
 
 playGame :: GameState -> GameState
 playGame _ = initLevel
