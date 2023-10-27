@@ -2,10 +2,12 @@ module Controller where
 
 import Model
 import Data.Maybe
+import System.Exit
 import Graphics.Gloss.Interface.IO.Game
 
 step :: Float -> GameState -> IO GameState
 step secs gs
+        | menuState == Quitting = exitSuccess
         | menuState == Playing && currentTime == (-10) =
             print gs >>
             return (updateGs gs {
@@ -230,21 +232,24 @@ checkButtonPress'' (x:xs) pos
 
 buttonPressed :: GameState -> Button -> GameState
 buttonPressed gs (Button _ _ Start) = playGame gs
--- buttonPressed gs (Button _ _ Quit) = quitGame
+buttonPressed gs (Button _ _ Quit) = quitGame gs
 buttonPressed gs (Button _ _ ToHighScore) = goToHighScores gs
 buttonPressed gs (Button _ _ Retry) = playGame gs
-buttonPressed gs (Button _ _ Resume) = playGame gs
+buttonPressed gs (Button _ _ Resume) = resumeGame gs
 buttonPressed gs (Button _ _ ToMainMenu) = goToMainMenu gs
-buttonPressed gs _ = gs
+-- buttonPressed gs _ = gs
 
 playGame :: GameState -> GameState
-playGame gs = gs { menu = Playing, buttons = noButtons }
+playGame _ = initLevel
 
 pauseGame :: GameState -> GameState
 pauseGame gs = gs { menu = PauseMenu, buttons = pauseButtons }
 
+resumeGame :: GameState -> GameState
+resumeGame gs = gs { menu = Playing, buttons = noButtons }
+
 goToMainMenu :: GameState -> GameState
-goToMainMenu gs = gs { menu = MainMenu, buttons = mainMenuButtons }
+goToMainMenu gs = initState
 
 goToHighScores :: GameState -> GameState
 goToHighScores gs = gs { menu = HighScores, buttons = highScoresButtons }
@@ -255,5 +260,5 @@ gameOver gs = gs { menu = GameOverMenu, buttons = gameOverButtons }
 victory :: GameState -> GameState
 victory gs = gs { menu = VictoryMenu, buttons = victoryButtons }
 
--- quitGame :: IO ()
--- quitGame = putStrLn "Quitting game..." >> return ()
+quitGame :: GameState -> GameState
+quitGame gs = gs { menu = Quitting, buttons = noButtons }

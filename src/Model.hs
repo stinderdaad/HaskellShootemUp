@@ -16,8 +16,8 @@ data GameState = GameState {
     settings :: Settings
 }
 
-data Menu = MainMenu | Playing | PauseMenu |
-            GameOverMenu | VictoryMenu | HighScores
+data Menu = MainMenu | Playing | PauseMenu | GameOverMenu |
+            VictoryMenu | HighScores | Quitting
     deriving (Show, Eq)
 
 data Object = PlayerObject Player |
@@ -147,10 +147,21 @@ instance Show Settings where
 
 initState :: GameState
 initState = GameState {
-    menu = Playing, -- should be main menu later
-    buttons = noButtons, -- should be main menu buttons later
+    menu = MainMenu,
+    buttons = mainMenuButtons,
     player = initPlayer,
-    objects = [EnemyObject basicEnemy], -- should be empty when spawning works
+    objects = [],
+    score = 0,
+    time = 0,
+    settings = level1
+}
+
+initLevel :: GameState
+initLevel = GameState {
+    menu = Playing,
+    buttons = noButtons,
+    player = initPlayer,
+    objects = [EnemyObject basicEnemy],
     score = 0,
     time = 3,
     settings = level1
@@ -207,10 +218,10 @@ startButton :: Button
 startButton = Button (Point 0 75) (200, 50) Start
 
 quitButton :: Button
-quitButton = Button (Point 0 0) (200, 50) Quit
+quitButton = Button (Point 0 (-75)) (200, 50) Quit
 
 highScoreButton :: Button
-highScoreButton = Button (Point 0 (-75)) (200, 50) ToHighScore
+highScoreButton = Button (Point 0 0) (200, 50) ToHighScore
 
 retryButton :: Button
 retryButton = Button (Point 0 75) (200, 50) Retry
@@ -225,16 +236,16 @@ noButtons :: [Button]
 noButtons = []
 
 mainMenuButtons :: [Button]
-mainMenuButtons = [startButton, quitButton, highScoreButton]
+mainMenuButtons = [startButton, highScoreButton, quitButton]
 
 gameOverButtons :: [Button]
-gameOverButtons = [retryButton, quitButton, mainMenuButton]
+gameOverButtons = [retryButton, mainMenuButton]
 
 pauseButtons :: [Button]
-pauseButtons = [resumeButton, quitButton, mainMenuButton]
+pauseButtons = [resumeButton, mainMenuButton]
 
 victoryButtons :: [Button]
-victoryButtons = gameOverButtons
+victoryButtons = [retryButton, highScoreButton, mainMenuButton]
 
 highScoresButtons :: [Button]
 highScoresButtons = [mainMenuButton]
