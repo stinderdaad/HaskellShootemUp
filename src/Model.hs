@@ -26,6 +26,8 @@ type Position = Point
 
 type Direction = Vector
 
+--type Size = (Int, Int)
+
 data GameState = GameState {
     menu :: Menu,
     buttons :: [Button],
@@ -46,7 +48,10 @@ data Menu = MainMenu | Playing | PauseMenu | GameOverMenu |
 data Function = Start | ToHighScore | Quit | Retry | ToMainMenu | Resume
     deriving (Show, Eq)
 
-data Attack = Basic | ItemAttack Item
+data Attack = BasicAttack | ItemAttack Item
+    deriving (Show, Eq)
+
+data EnemyType = BasicEnemy | ToughEnemy | BossEnemy
     deriving (Show, Eq)
 
 data Player = Player {
@@ -60,6 +65,7 @@ data Player = Player {
 } deriving (Show)
 
 data Enemy = Enemy {
+    enemyType :: EnemyType,
     enemyPosition :: Position,
     enemyDirection :: Direction,
     enemySpeed :: Float,
@@ -125,7 +131,7 @@ instance GameObject Bullet where
     size :: Bullet -> (Int, Int)
     size = bulletSize
     isDead :: Bullet -> Bool
-    isDead _ = False
+    isDead bullet = pierce bullet <= 0
 
 instance GameObject Item where
     position :: Item -> Position
@@ -147,7 +153,7 @@ instance CanShoot Player where
     shoot :: Player -> [Bullet]
     shoot player
         | playerTimeToReload player > 0 = []
-        | playerAttack player == Basic = [Bullet (playerBulletSpawn player) (1, 0) 15 (40, 20) 0.2 1]
+        | playerAttack player == BasicAttack = [Bullet (playerBulletSpawn player) (1, 0) 15 (40, 20) 0.2 1]
         | otherwise = []
         where
             playerBulletSpawn player' = (x + (fromIntegral w / 2.0) + 25, y)
@@ -159,7 +165,7 @@ instance CanShoot Enemy where
     shoot :: Enemy -> [Bullet]
     shoot enemy
         | enemyTimeToReload enemy > 0 = []
-        | enemyAttack enemy == Basic = [Bullet (enemyBulletSpawn enemy) (-1, 0) 10 (2, 2) 0.5 1]
+        | enemyAttack enemy == BasicAttack = [Bullet (enemyBulletSpawn enemy) (-1, 0) 10 (2, 2) 0.5 1]
         | otherwise = []
         where
             enemyBulletSpawn enemy' = (x - (fromIntegral w / 2.0) - 25, y)
@@ -178,74 +184,6 @@ instance CanBeHit Enemy where
 instance CanBeHit Bullet where
     hit :: Bullet -> Bullet
     hit bullet = bullet { pierce = pierce bullet - 1 }
-
-
--- instance Show GameState where
---     show gs = "GameState { time: " ++ show (time gs)
---               -- ++ ", player: " ++ show (player gs)
---               ++ ", objects: " ++ show (objects gs)
---               -- ++ ", score: " ++ show (score gs)
---               -- ++ ", settings: " ++ show (settings gs)
---               ++ " }"
-
--- instance Show Player where
---     show player = "Player { position: " ++ show (playerPosition player)
---                   ++ ", direction: " ++ show (playerDirection player)
---                   ++ ", health: " ++ show (playerHealth player)
---                   ++ ", attack: " ++ show (playerAttack player)
---                   ++ ", speed: " ++ show (playerSpeed player)
---                   ++ " }"
-
--- instance Show Object where
---     show (PlayerObject player) = show player
---     show (EnemyObject enemy) = show enemy
---     show (BossObject boss) = show boss
---     show (BulletObject bullet) = show bullet
---     show (ItemObject item) = show item
-
--- instance Show Enemy where
---     show enemy = "Enemy { position: " ++ show (enemyPosition enemy)
---                  ++ ", health: " ++ show (enemyHealth enemy)
---                  ++ ", size: " ++ show (enemySize enemy)
---                  ++ ", attack: " ++ show (enemyAttack enemy)
---                  ++ ", speed: " ++ show (enemySpeed enemy)
---                  ++ ", pointsWorth: " ++ show (pointsWorth enemy)
---                  ++ " }"
-
--- instance Eq Enemy where
---     (==) enemy1 enemy2 =
---         enemyPosition enemy1 == enemyPosition enemy2 &&
---         enemySpeed enemy1 == enemySpeed enemy2 &&
---         enemyHealth enemy1 == enemyHealth enemy2 &&
---         enemySize enemy1 == enemySize enemy2 &&
---         enemyAttack enemy1 == enemyAttack enemy2 &&
---         pointsWorth enemy1 == pointsWorth enemy2
-
--- instance Eq Attack where
---     (==) Basic Basic = True
---     (==) (ItemAttack item1) (ItemAttack item2) = item1 == item2
---     (==) _ _ = False
-
--- instance Show Bullet where
---     show bullet = "Bullet { position: " ++ show (bulletPosition bullet)
---                   ++ ", direction: " ++ show (bulletDirection bullet)
---                   ++ ", speed: " ++ show (bulletSpeed bullet)
---                   ++ ", size: " ++ show (bulletSize bullet)
---                   ++ " }"
-
--- instance Show Item where
---     show item = "Item { position: " ++ show (itemPosition item)
---                 ++ ", size: " ++ show (itemSize item)
---                 ++ ", bulletQuantity: " ++ show (bulletQuantity item)
---                 ++ ", reloadTimeMultiplier: " ++ show (reloadTimeMultiplier item)
---                 ++ " }"
-
--- instance Show Settings where
---     show settings = "Settings { enemySpawnRate: " ++ show (enemySpawnRate settings)
---                     ++ ", itemSpawnRate: " ++ show (itemSpawnRate settings)
---                     ++ ", enemies: " ++ show (enemies settings)
---                     ++ ", boss: " ++ show (boss settings)
---                     ++ " }"
 
 
 -- # Initialisations # --
@@ -283,16 +221,16 @@ level2 :: Settings
 level2 = Settings 1.0 1.0 [basicEnemy, toughEnemy] basicBoss
 
 initPlayer :: Player
-initPlayer = Player (-600 ,0) (0, 0) 5 3 (25, 50) Basic 0
+initPlayer = Player (-600 ,0) (0, 0) 5 3 (25, 50) BasicAttack 0
 
 basicEnemy :: Enemy
-basicEnemy = Enemy (800, 0) (-1, 0) 5 3 (25, 60) Basic 50 0
+basicEnemy = Enemy BasicEnemy (800, 0) (-1, 0) 5 3 (25, 60) BasicAttack 50 0
 
 toughEnemy :: Enemy
-toughEnemy = Enemy (800, 0) (-1, 0) 2.5 10 (50, 120) Basic 200 0
+toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 2.5 10 (50, 120) BasicAttack 200 0
 
 basicBoss :: Enemy
-basicBoss = Enemy (800, 0) (-1, 0) 0.5 50 (90, 180) Basic 1000 0
+basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.5 50 (90, 180) BasicAttack 1000 0
 
 -- basicBullet :: Object -> Bullet
 -- basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40, 20) 0.2
@@ -355,6 +293,16 @@ objectCorners obj = ((x - (fromIntegral w/2.0), y + (fromIntegral h/2.0)), -- NW
                      (x - (fromIntegral w/2.0), y - (fromIntegral h/2.0))) -- SW
                         where (x, y) = position obj
                               (w, h) = size obj
+
+positionInObject :: GameObject a => Position -> a -> Bool
+positionInObject pos obj = positionInObject' pos (position obj) (size obj)
+
+positionInObject' :: Position -> Position -> (Int, Int) -> Bool
+positionInObject' (xPos, yPos) (xObj, yObj) (objWidth, objHeight) =
+    xPos >= xObj - (fromIntegral objWidth / 2.0)
+    && xPos <= xObj + (fromIntegral objWidth / 2.0)
+    && yPos >= yObj - (fromIntegral objHeight / 2.0)
+    && yPos <= yObj + (fromIntegral objHeight / 2.0)
 
 -- shoot :: Object -> [Object]
 -- shoot obj@(PlayerObject player)
