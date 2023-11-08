@@ -5,6 +5,7 @@ module Model where
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Data.Point
 import System.Random
+import Text.ParserCombinators.ReadPrec (reset)
 
 
 -- # Classes # --
@@ -12,7 +13,7 @@ import System.Random
 class GameObject a where
     position :: a -> Position
     size :: a -> (Int, Int)
-    isDead :: a -> Bool
+    isDead :: a -> Bool -- should move to CanBeHit
 
 class GameObject a => CanShoot a where
     shoot :: a -> [Bullet]
@@ -38,7 +39,7 @@ data GameState = GameState {
     score :: Int,
     time :: Float,
     settings :: Settings
-}
+} deriving (Show)
 
 
 data Menu = MainMenu | Playing | PauseMenu | GameOverMenu |
@@ -74,7 +75,7 @@ data Enemy = Enemy {
     enemyAttack :: Attack,
     pointsWorth :: Int,
     enemyTimeToReload :: Float
-} deriving (Show)
+} deriving (Show, Eq)
 
 data Bullet = Bullet {
     bulletPosition :: Position,
@@ -303,6 +304,19 @@ positionInObject' (xPos, yPos) (xObj, yObj) (objWidth, objHeight) =
     && xPos <= xObj + (fromIntegral objWidth / 2.0)
     && yPos >= yObj - (fromIntegral objHeight / 2.0)
     && yPos <= yObj + (fromIntegral objHeight / 2.0)
+
+--rework this
+resetCooldownPlayer :: Player -> Player
+resetCooldownPlayer player = player { playerTimeToReload = 3 }
+
+resetCooldownEnemy :: Enemy -> Enemy
+resetCooldownEnemy enemy = enemy { enemyTimeToReload = 3 }
+
+getBoss :: [Enemy] -> Enemy
+getBoss [] = error "No boss in list"
+getBoss (enemy:enemies)
+    | enemyType enemy == BossEnemy = enemy
+    | otherwise = getBoss enemies
 
 -- shoot :: Object -> [Object]
 -- shoot obj@(PlayerObject player)

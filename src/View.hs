@@ -73,6 +73,7 @@ playerToPicture player sprite =
     uncurry translate (position player) (rotate 90 (scale 2 2 sprite))
 
 enemiesToPictures :: [Enemy] -> (Sprite, Sprite, Sprite) -> [Picture]
+enemiesToPictures [] _ = [Blank]
 enemiesToPictures (enemy:enemies) (basicEnemySprite, toughEnemySprite, bossSprite)
     | enemyType enemy == BasicEnemy =
         basicEnemyToPicture enemy basicEnemySprite :
