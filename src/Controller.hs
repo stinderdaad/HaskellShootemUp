@@ -46,9 +46,9 @@ step secs gs
                      checkBossDead .
                      --awardPoints .
                      --checkCollisions .
-                     checkPlayerDead -- .
+                     checkPlayerDead .
                      --checkCollisionPlayer .
-                     --shooting
+                     shooting
 
 input :: Event -> GameState -> IO GameState
 input event gs = do
@@ -134,14 +134,18 @@ movePlayerDown gs = gs { player = (player gs) {
 
 shooting :: GameState -> GameState
 shooting gs | menu gs == Playing = gs {
-                bullets = bullets gs ++ shoot (player gs) ++ concatMap shoot (enemies gs)
+                player = fst playerShoot,
+                enemies = map fst enemyShoot,
+                bullets = bullets gs ++ snd playerShoot ++ concatMap snd enemyShoot
                                      }
             | otherwise = gs
+    where playerShoot = shoot (player gs)
+          enemyShoot = map shoot (enemies gs)
 
 updatePlayer :: Float -> Player -> Player
 updatePlayer secs player = player {
     playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player),
-    playerTimeToReload = playerTimeToReload player - secs
+    playerTimeToNextReload = playerTimeToNextReload player - secs
 }
 
 updateEnemies :: Float -> [Enemy] -> [Enemy]
@@ -150,7 +154,7 @@ updateEnemies secs = map (updateEnemy secs)
 updateEnemy :: Float -> Enemy -> Enemy
 updateEnemy secs enemy = enemy {
     enemyPosition = newPosition (enemyPosition enemy) (enemyDirection enemy) (enemySpeed enemy),
-    enemyTimeToReload = enemyTimeToReload enemy - secs
+    enemyTimeToNextReload = enemyTimeToNextReload enemy - secs
 }
 
 updateBullets :: [Bullet] -> [Bullet]
@@ -164,15 +168,15 @@ updateBullet bullet = bullet { bulletPosition = newPosition (bulletPosition bull
 --     bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }
 -- updateObject secs (PlayerObject player) = PlayerObject player {
 --     playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player),
---     playerTimeToReload = playerTimeToReload player - secs
+--     playerTimeToNextReload = playerTimeToNextReload player - secs
 -- }
 -- updateObject secs (EnemyObject enemy) = EnemyObject enemy {
 --     enemyPosition = newPosition (enemyPosition enemy) (enemyDirection enemy) (enemySpeed enemy),
---     enemyTimeToReload = enemyTimeToReload enemy - secs
+--     enemyTimeToNextReload = enemyTimeToNextReload enemy - secs
 -- }
 -- updateObject secs (BossObject boss) = BossObject boss {
 --     enemyPosition = newPosition (enemyPosition boss) (enemyDirection boss) (enemySpeed boss),
---     enemyTimeToReload = enemyTimeToReload boss - secs
+--     enemyTimeToNextReload = enemyTimeToNextReload boss - secs
 -- }
 -- updateObject secs (ItemObject item) = ItemObject item
 

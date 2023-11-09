@@ -13,13 +13,13 @@ import Text.ParserCombinators.ReadPrec (reset)
 class GameObject a where
     position :: a -> Position
     size :: a -> (Int, Int)
-    isDead :: a -> Bool -- should move to CanBeHit
 
 class GameObject a => CanShoot a where
-    shoot :: a -> [Bullet]
+    shoot :: a -> (a, [Bullet])
 
-class GameObject a => CanBeHit a where
+class GameObject a => CanCollide a where
     hit :: a -> a
+    isDead :: a -> Bool
 
 
 -- # Data structures # --
@@ -62,7 +62,8 @@ data Player = Player {
     playerHealth :: Int,
     playerSize :: (Int, Int),
     playerAttack :: Attack,
-    playerTimeToReload :: Float
+    playerReloadTime :: Float,
+    playerTimeToNextReload :: Float
 } deriving (Show)
 
 data Enemy = Enemy {
@@ -74,7 +75,8 @@ data Enemy = Enemy {
     enemySize :: (Int, Int),
     enemyAttack :: Attack,
     pointsWorth :: Int,
-    enemyTimeToReload :: Float
+    enemyReloadTime :: Float,
+    enemyTimeToNextReload :: Float
 } deriving (Show, Eq)
 
 data Bullet = Bullet {
@@ -82,7 +84,6 @@ data Bullet = Bullet {
     bulletDirection :: Direction,
     bulletSpeed :: Float,
     bulletSize :: (Int, Int),
-    reloadTime :: Float,
     pierce :: Int
 } deriving (Show)
 
@@ -115,47 +116,39 @@ instance GameObject Player where
     position = playerPosition
     size :: Player -> (Int, Int)
     size = playerSize
-    isDead :: Player -> Bool
-    isDead player = playerHealth player <= 0
 
 instance GameObject Enemy where
     position :: Enemy -> Position
     position = enemyPosition
     size :: Enemy -> (Int, Int)
     size = enemySize
-    isDead :: Enemy -> Bool
-    isDead enemy = enemyHealth enemy <= 0
 
 instance GameObject Bullet where
     position :: Bullet -> Position
     position = bulletPosition
     size :: Bullet -> (Int, Int)
     size = bulletSize
-    isDead :: Bullet -> Bool
-    isDead bullet = pierce bullet <= 0
 
 instance GameObject Item where
     position :: Item -> Position
     position = itemPosition
     size :: Item -> (Int, Int)
     size = itemSize
-    isDead :: Item -> Bool
-    isDead _ = False
 
 instance GameObject Button where
     position :: Button -> Position
     position = buttonPosition
     size :: Button -> (Int, Int)
     size = buttonSize
-    isDead :: Button -> Bool
-    isDead _ = False
 
 instance CanShoot Player where
-    shoot :: Player -> [Bullet]
+    shoot :: Player -> (Player, [Bullet])
     shoot player
-        | playerTimeToReload player > 0 = []
-        | playerAttack player == BasicAttack = [Bullet (playerBulletSpawn player) (1, 0) 15 (40, 20) 0.2 1]
-        | otherwise = []
+        | playerTimeToNextReload player > 0 = (player, [])
+        | playerAttack player == BasicAttack =
+            (player { playerTimeToNextReload = playerReloadTime player},
+            [Bullet (playerBulletSpawn player) (1, 0) 15 (40, 20) 1])
+        | otherwise = (player, [])
         where
             playerBulletSpawn player' = (x + (fromIntegral w / 2.0) + 25, y)
                 where
@@ -163,28 +156,36 @@ instance CanShoot Player where
                     (w, _) = size player'
 
 instance CanShoot Enemy where
-    shoot :: Enemy -> [Bullet]
+    shoot :: Enemy -> (Enemy, [Bullet])
     shoot enemy
-        | enemyTimeToReload enemy > 0 = []
-        | enemyAttack enemy == BasicAttack = [Bullet (enemyBulletSpawn enemy) (-1, 0) 10 (2, 2) 0.5 1]
-        | otherwise = []
+        | enemyTimeToNextReload enemy > 0 = (enemy, [])
+        | enemyAttack enemy == BasicAttack =
+            (enemy { enemyTimeToNextReload = enemyReloadTime enemy } ,
+            [Bullet (enemyBulletSpawn enemy) (-1, 0) 7.5 (40, 20) 1])
+        | otherwise = (enemy, [])
         where
             enemyBulletSpawn enemy' = (x - (fromIntegral w / 2.0) - 25, y)
                 where
                     (x, y) = position enemy'
                     (w, _) = size enemy'
 
-instance CanBeHit Player where
+instance CanCollide Player where
     hit :: Player -> Player
     hit player = player { playerHealth = playerHealth player - 1 }
+    isDead :: Player -> Bool
+    isDead player = playerHealth player <= 0
 
-instance CanBeHit Enemy where
+instance CanCollide Enemy where
     hit :: Enemy -> Enemy
     hit enemy = enemy { enemyHealth = enemyHealth enemy - 1 }
+    isDead :: Enemy -> Bool
+    isDead enemy = enemyHealth enemy <= 0
 
-instance CanBeHit Bullet where
+instance CanCollide Bullet where
     hit :: Bullet -> Bullet
     hit bullet = bullet { pierce = pierce bullet - 1 }
+    isDead :: Bullet -> Bool
+    isDead bullet = pierce bullet <= 0
 
 
 -- # Initialisations # --
@@ -216,22 +217,23 @@ initLevel = GameState {
 }
 
 level1 :: Settings
-level1 = Settings 0.5 0.5 [basicEnemy] basicBoss
+level1 = Settings 0.2 0.2 [basicEnemy] basicBoss
 
 level2 :: Settings
-level2 = Settings 1.0 1.0 [basicEnemy, toughEnemy] basicBoss
+level2 = Settings 0.3 0.3 [basicEnemy, toughEnemy] basicBoss
 
+-- pos dir speed health size attack reloadTime timeToNextReload
 initPlayer :: Player
-initPlayer = Player (-600 ,0) (0, 0) 5 3 (25, 50) BasicAttack 0
+initPlayer = Player (-600 ,0) (0, 0) 5 3 (25, 50) BasicAttack 0.2 0
 
 basicEnemy :: Enemy
-basicEnemy = Enemy BasicEnemy (800, 0) (-1, 0) 5 3 (25, 60) BasicAttack 50 0
+basicEnemy = Enemy BasicEnemy (800, 0) (-1, 0) 2.5 3 (25, 60) BasicAttack 50 3 0
 
 toughEnemy :: Enemy
-toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 2.5 10 (50, 120) BasicAttack 200 0
+toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 10 (50, 120) BasicAttack 200 1.5 0
 
 basicBoss :: Enemy
-basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.5 50 (90, 180) BasicAttack 1000 0
+basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.2 50 (90, 180) BasicAttack 1000 1.5 0
 
 -- basicBullet :: Object -> Bullet
 -- basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40, 20) 0.2
@@ -307,10 +309,10 @@ positionInObject' (xPos, yPos) (xObj, yObj) (objWidth, objHeight) =
 
 --rework this
 resetCooldownPlayer :: Player -> Player
-resetCooldownPlayer player = player { playerTimeToReload = 3 }
+resetCooldownPlayer player = player { playerTimeToNextReload = 3 }
 
 resetCooldownEnemy :: Enemy -> Enemy
-resetCooldownEnemy enemy = enemy { enemyTimeToReload = 3 }
+resetCooldownEnemy enemy = enemy { enemyTimeToNextReload = 3 }
 
 getBoss :: [Enemy] -> Enemy
 getBoss [] = error "No boss in list"
@@ -320,24 +322,24 @@ getBoss (enemy:enemies)
 
 -- shoot :: Object -> [Object]
 -- shoot obj@(PlayerObject player)
---     | playerTimeToReload player > 0 = []
+--     | playerTimeToNextReload player > 0 = []
 --     | playerAttack player == Basic = [BulletObject (basicBullet obj)]
 --     | otherwise = []
 -- shoot obj@(EnemyObject enemy)
---     | enemyTimeToReload enemy > 0 = [obj]
---     | enemyAttack enemy == Basic = EnemyObject enemy{ enemyTimeToReload = reloadTime (basicBullet obj) } :
+--     | enemyTimeToNextReload enemy > 0 = [obj]
+--     | enemyAttack enemy == Basic = EnemyObject enemy{ enemyTimeToNextReload = reloadTime (basicBullet obj) } :
 --                                    [BulletObject (basicBullet obj)]
 --     | otherwise = [obj]
 -- shoot obj@(BossObject boss)
---     | enemyTimeToReload boss > 0 = [obj]
---     | enemyAttack boss == Basic = BossObject boss{ enemyTimeToReload = reloadTime (basicBullet obj) } :
+--     | enemyTimeToNextReload boss > 0 = [obj]
+--     | enemyAttack boss == Basic = BossObject boss{ enemyTimeToNextReload = reloadTime (basicBullet obj) } :
 --                                   [BulletObject (basicBullet obj)]
 --     | otherwise = [obj]
 -- shoot obj = [obj]
 
 -- playerShoot :: GameState -> GameState
 -- playerShoot gs
---         | playerTimeToReload player' > 0 = gs
+--         | playerTimeToNextReload player' > 0 = gs
 --         | playerAttack player' == Basic = gs {
 --             objects = objects ++ shoot (PlayerObject player'),
 --         }
