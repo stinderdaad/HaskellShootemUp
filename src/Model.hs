@@ -5,7 +5,7 @@ module Model where
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Data.Point
 import System.Random
-import Text.ParserCombinators.ReadPrec (reset)
+import Data.List
 
 
 -- # Classes # --
@@ -85,7 +85,7 @@ data Bullet = Bullet {
     bulletSpeed :: Float,
     bulletSize :: (Int, Int),
     pierce :: Int
-} deriving (Show)
+} deriving (Show, Eq)
 
 data Item = Item {
     itemPosition :: Position,
@@ -285,8 +285,7 @@ filterPlayerBullets bullets =
     [bullet | bullet <- bullets, bulletDirection bullet == (1, 0)]
 
 filterEnemyBullets :: [Bullet] -> [Bullet]
-filterEnemyBullets bullets =
-    [bullet | bullet <- bullets, bulletDirection bullet == (-1, 0)]
+filterEnemyBullets bullets = bullets \\ filterPlayerBullets bullets
 
 
 objectCorners :: GameObject a => a -> (Position, Position, Position, Position)
