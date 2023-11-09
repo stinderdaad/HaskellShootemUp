@@ -44,18 +44,9 @@ step secs gs
           currentTime = time gs
           updateGs = removeDeadObjects .
                      checkBossDead .
-                     --awardPoints .
-                     --checkCollisions .
-
-                     --awardPoints .
-
-                     --awardPoints .
-                     --checkCollisions .
-
-                     --awardPoints .
-                     checkAllCollisions .
+                     awardPoints .
                      checkPlayerDead .
-                     --checkCollisionPlayer .
+                     checkAllCollisions .
                      shooting
 
 input :: Event -> GameState -> IO GameState
@@ -196,55 +187,6 @@ checkAllCollisions gs = gs {
 collideWithObjects :: (CanCollide a, CanCollide b) => [a] -> [b] -> [a]
 collideWithObjects objs1 objs2 = map (\obj -> foldl collision obj objs2) objs1
 
-
--- checkCollisionPlayer :: GameState -> GameState
--- checkCollisionPlayer gs = gs { player = hitPlayer }
---     where (PlayerObject hitPlayer) = checkCollisions' (PlayerObject (player gs)) (allObjects gs)
-
--- checkCollisions' :: Object -> [Object] -> Object
--- checkCollisions' obj [] = obj
--- checkCollisions' (PlayerObject player) (BulletObject bullet:ys)
---         | objectHitObject (PlayerObject player) (BulletObject bullet) =
---             PlayerObject (playerHit player)
---         | otherwise = checkCollisions' (PlayerObject player) ys
--- checkCollisions' (PlayerObject player) (EnemyObject enemy:ys)
---         | objectHitObject (PlayerObject player) (EnemyObject enemy) =
---             PlayerObject (playerHit player)
---         | otherwise = checkCollisions' (PlayerObject player) ys
--- checkCollisions' (PlayerObject player) (BossObject boss:ys)
---         | objectHitObject (PlayerObject player) (BossObject boss) =
---             PlayerObject (playerHit player)
---         | otherwise = checkCollisions' (PlayerObject player) ys
--- checkCollisions' (EnemyObject enemy) (BulletObject bullet:ys)
---         | objectHitObject (EnemyObject enemy) (BulletObject bullet) =
---             EnemyObject (enemyHit enemy)
---         | otherwise = checkCollisions' (EnemyObject enemy) ys
--- checkCollisions' (EnemyObject enemy) (PlayerObject player:ys)
---         | objectHitObject (EnemyObject enemy) (PlayerObject player) =
---             EnemyObject (enemyHit enemy)
---         | otherwise = checkCollisions' (EnemyObject enemy) ys
--- checkCollisions' (BossObject boss) (BulletObject bullet:ys)
---         | objectHitObject (BossObject boss) (BulletObject bullet) =
---             BossObject (enemyHit boss)
---         | otherwise = checkCollisions' (BossObject boss) ys
--- checkCollisions' (BossObject boss) (PlayerObject player:ys)
---         | objectHitObject (BossObject boss) (PlayerObject player) =
---             BossObject (enemyHit boss)
---         | otherwise = checkCollisions' (BossObject boss) ys
--- checkCollisions' (BulletObject bullet) (PlayerObject player:ys)
---         | objectHitObject (BulletObject bullet) (PlayerObject player) =
---             DeadObject
---         | otherwise = checkCollisions' (BulletObject bullet) ys
--- checkCollisions' (BulletObject bullet) (EnemyObject enemy:ys)
---         | objectHitObject (BulletObject bullet) (EnemyObject enemy) =
---             DeadObject
---         | otherwise = checkCollisions' (BulletObject bullet) ys
--- checkCollisions' (BulletObject bullet) (BossObject boss:ys)
---         | objectHitObject (BulletObject bullet) (BossObject boss) =
---             DeadObject
---         | otherwise = checkCollisions' (BulletObject bullet) ys
--- checkCollisions' obj (_:ys) = checkCollisions' obj ys
-
 removeDeadObjects :: GameState -> GameState
 removeDeadObjects = removeDeadBullets . removeDeadEnemies
 
@@ -264,8 +206,8 @@ checkBossDead gs
         | time gs == -10 && isDead (getBoss (enemies gs)) = victory gs
         | otherwise = gs
 
--- awardPoints :: GameState -> GameState
--- awardPoints gs = gs { score = score gs + countPoints (objects gs) }
+awardPoints :: GameState -> GameState
+awardPoints gs = gs { score = score gs + countPoints (enemies gs) }
 
 spawnBasic :: Float -> GameState -> GameState
 spawnBasic yPos gs = gs { enemies = enemies gs ++ [basicEnemy { enemyPosition = (800, yPos) }] }

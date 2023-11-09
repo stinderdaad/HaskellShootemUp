@@ -217,10 +217,10 @@ initLevel = GameState {
 }
 
 level1 :: Settings
-level1 = Settings 1 1 [basicEnemy] basicBoss
+level1 = Settings 0.5 0.5 [basicEnemy] basicBoss
 
 level2 :: Settings
-level2 = Settings 1.2 1.2 [basicEnemy, toughEnemy] basicBoss
+level2 = Settings 0.75 0.75 [basicEnemy, toughEnemy] basicBoss
 
 -- pos dir speed health size attack reloadTime timeToNextReload
 initPlayer :: Player
@@ -323,12 +323,8 @@ positionInObject (xPos, yPos) obj =
           (objWidth, objHeight) = size obj
 
 
--- countPoints :: [Object] -> Int
--- countPoints [] = 0
--- countPoints (EnemyObject enemy:xs)
---         | isDead (EnemyObject enemy) = pointsWorth enemy + countPoints xs
---         | otherwise = countPoints xs
--- countPoints (BossObject boss:xs)
---         | isDead (BossObject boss) = pointsWorth boss + countPoints xs
---         | otherwise = countPoints xs
--- countPoints (_:xs) = countPoints xs
+countPoints :: [Enemy] -> Int
+countPoints [] = 0
+countPoints (enemy:enemies)
+    | isDead enemy = pointsWorth enemy + countPoints enemies
+    | otherwise = countPoints enemies
