@@ -14,6 +14,7 @@ view gs = do
     basicEnemySprite <- loadBasicEnemySprite
     bulletSprite <- loadBulletSprite
     bossSprite <- loadBossSprite
+    highScores <- loadHighScores
     return (pictures (
             allHitboxesToPictures gs : -- only for debugging
             [playerToPicture (player gs) playerSprite] ++
@@ -22,10 +23,29 @@ view gs = do
             [timerToPicture gs] ++
             [scoreToPicture gs] ++
             [livesToPicture gs] ++
+            [highScoresToPicture gs highScores] ++
             buttonsToPictures (buttons gs)
             ))
 
 
+-- # Load sprites/data # --
+
+loadPlayerSprite :: IO Picture
+loadPlayerSprite = loadBMP "./sprites/Ships/PlayerShip.bmp"
+
+loadBasicEnemySprite :: IO Picture
+loadBasicEnemySprite = loadBMP "./sprites/Ships/EnemyBasic.bmp"
+
+loadBulletSprite :: IO Picture
+loadBulletSprite = loadBMP "./sprites/Misc/Bullet.bmp"
+
+loadBossSprite :: IO Picture
+loadBossSprite = loadBMP "./sprites/Ships/EnemyKamikaze.bmp"
+
+loadHighScores :: IO String
+loadHighScores = readFile "data/HighScores.txt"
+
+-- # Pure # --
 -- # Pictures # --
 
 allHitboxesToPictures :: GameState -> Picture
@@ -97,6 +117,27 @@ buttonText (Button _ _ Resume) = "Resume"
 buttonText (Button _ _ ToMainMenu) = "Main Menu"
 -- buttonText _ = "Button"
 
+highScoresToPicture :: GameState -> String -> Picture
+highScoresToPicture gs scores
+    | menu gs == HighScores = highScoresToPicture' scores
+    | otherwise = Blank
+
+highScoresToPicture' :: String -> Picture
+highScoresToPicture' scores = highScoresToPicture'' (lines scores) 0
+
+highScoresToPicture'' :: [String] -> Int ->  Picture
+highScoresToPicture'' [] _ = Blank
+highScoresToPicture'' (score:scores) n =
+    pictures (highScoreToPicture score n :
+              [highScoresToPicture'' scores (n + 1)])
+
+highScoreToPicture :: String -> Int -> Picture
+highScoreToPicture score n = translate (-400) (300 - (fromIntegral n * 50)) (scale 0.2 0.2 pic)
+    where pic = pictures (highScoreBox : [text score])
+
+highScoreBox :: Picture
+highScoreBox = Color white (polygon [(-50, -50), (-50, 220), (800, 220), (800, -50)])
+
 -- handy for hitboxes and buttons
 drawBox :: GameObject a => a -> Picture
 drawBox obj = polygon [nW, nE, sE, sW]
@@ -124,25 +165,7 @@ livesToPicture gs = translate 500 300 (scale 0.2 0.2 pic)
     where pic = text ("Lives left: " ++ show (playerHealth (player gs)))
 
 
--- # Sprites # --
-
-loadPlayerSprite :: IO Picture
-loadPlayerSprite = loadBMP "./sprites/Ships/PlayerShip.bmp"
-
-loadBasicEnemySprite :: IO Picture
-loadBasicEnemySprite = loadBMP "./sprites/Ships/EnemyBasic.bmp"
-
-loadBulletSprite :: IO Picture
-loadBulletSprite = loadBMP "./sprites/Misc/Bullet.bmp"
-
-loadBossSprite :: IO Picture
-loadBossSprite = loadBMP "./sprites/Ships/EnemyKamikaze.bmp"
-
-
 -- # Helper Functions # --
-
--- positionToTuple :: Position -> (Float, Float)
--- positionToTuple (Point x y) = (x, y)
 
 -- This helper function rounds down a Float to the nearest whole number.
 floorFloat :: Float -> Int
