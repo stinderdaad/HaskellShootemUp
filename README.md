@@ -12,6 +12,8 @@ If you manage to survive long enough a boss will spawn and if you beat it you co
 - Pressing 'p' will pause the game.
 - You can pickup items by flying over them. (there are no items yet)
 
+please do not resize the game or you will not know what area is out of bounds
+
 ## Assets
 All sprites are from Kenney game assets:
 https://kenney-assets.itch.io/pixel-shmup

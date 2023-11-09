@@ -256,10 +256,10 @@ basicBoss :: Enemy
 basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.2 50 (90, 180) BasicAttack 1000 1.5 0
 
 defaultWalls :: [Wall]
-defaultWalls = [Wall (0, 550) (1600, 300), -- up
-                Wall (0, -550) (1600, 300), -- down
+defaultWalls = [Wall (0, 550) (2000, 300), -- up
+                Wall (0, -550) (2000, 300), -- down
                 Wall (-950, 0) (300, 800), -- left
-                Wall (950, 0) (300, 800)] -- right
+                Wall (1100, 0) (300, 800)] -- right
 
 startButton :: Button
 startButton = Button (0, 75) (200, 50) Start

@@ -176,15 +176,18 @@ spawnEnemiesItems randomFloat1 randomFloat2 gs
           enemySpawnRate' = enemySpawnRate (settings gs)
           enemies' = enemiesInLevel (settings gs)
 
+-- this function should be a lot prettier, its a mess right now
 checkAllCollisions :: GameState -> GameState
 checkAllCollisions gs = gs {
-    player = head (collideWithObjects [player gs] (filterEnemyBullets bulletsInGame) ++
-             collideWithObjects [player gs] (enemies gs)),
-    enemies = collideWithObjects (enemies gs) (filterPlayerBullets bulletsInGame),
+    player = head (collideWithObjects playerAfterEnemyCollision (filterEnemyBullets bulletsInGame)),
+    enemies = collideWithObjects enemiesInGame (filterPlayerBullets bulletsInGame),
     bullets = collideWithObjects (filterEnemyBullets bulletsInGame) [player gs] ++
-              collideWithObjects (filterPlayerBullets bulletsInGame) (enemies gs)
+              collideWithObjects (filterPlayerBullets bulletsInGame) enemiesInGame
 }
-    where bulletsInGame = collideWithObjects (bullets gs) (walls gs)
+    where playerAfterWallCollision = collideWithObjects [player gs] (walls gs)
+          playerAfterEnemyCollision = collideWithObjects playerAfterWallCollision (enemies gs)
+          bulletsInGame = collideWithObjects (bullets gs) (walls gs)
+          enemiesInGame = collideWithObjects (enemies gs) (walls gs)
 
 collideWithObjects :: (CanCollide a, CanCollide b) => [a] -> [b] -> [a]
 collideWithObjects objs1 objs2 = map (\obj -> foldl collision obj objs2) objs1
