@@ -212,7 +212,7 @@ initLevel = GameState {
     bullets = [],
     items = [],
     score = 0,
-    time = 3,
+    time = 100,
     settings = level2
 }
 
@@ -220,7 +220,7 @@ level1 :: Settings
 level1 = Settings 1 1 [basicEnemy] basicBoss
 
 level2 :: Settings
-level2 = Settings 1.5 1.5 [basicEnemy, toughEnemy] basicBoss
+level2 = Settings 1.2 1.2 [basicEnemy, toughEnemy] basicBoss
 
 -- pos dir speed health size attack reloadTime timeToNextReload
 initPlayer :: Player
