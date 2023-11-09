@@ -3,6 +3,8 @@ module View where
 import Graphics.Gloss
 import Model
 
+type Sprite = Picture
+
 -- # Impure # --
 
 view :: GameState -> IO Picture
@@ -13,7 +15,10 @@ view gs = do
     bulletSprite <- loadBulletSprite
     bossSprite <- loadBossSprite
     return (pictures (
-            objectsToPictures (allObjects gs) (playerSprite, basicEnemySprite, bulletSprite, bossSprite) ++
+            allHitboxesToPictures gs : -- only for debugging
+            [playerToPicture (player gs) playerSprite] ++
+            enemiesToPictures (enemies gs) (basicEnemySprite, basicEnemySprite, bossSprite) ++
+            bulletsToPictures (bullets gs) bulletSprite ++
             [timerToPicture gs] ++
             [scoreToPicture gs] ++
             [livesToPicture gs] ++
@@ -23,42 +28,63 @@ view gs = do
 
 -- # Pictures # --
 
-objectsToPictures :: [Object] -> (Picture, Picture, Picture, Picture) -> [Picture]
-objectsToPictures [] _ = []
-objectsToPictures (PlayerObject player:xs) sprites@(playerSprite, _, _, _) =
-    Color green (drawBox (PlayerObject player)) : -- hitbox
-    objectToPicture (PlayerObject player) (rotate 90 (scale 2 2 playerSprite)) :
-    objectsToPictures xs sprites
-objectsToPictures (EnemyObject enemy:xs) sprites@(_, basicEnemySprite, _, _) =
-    Color red (drawBox (EnemyObject enemy)) : -- hitbox
-    objectToPicture (EnemyObject enemy) (rotate 270 (scale 2 2 basicEnemySprite)) :
-    objectsToPictures xs sprites
-objectsToPictures (BulletObject bullet:xs) sprites@(_, _, bulletSprite, _) =
-    Color black (drawBox (BulletObject bullet)) :  -- hitbox
-    objectToPicture (BulletObject bullet) (rotate 90 (scale 1.5 1.5 bulletSprite)) :
-    objectsToPictures xs sprites
-objectsToPictures (BossObject boss:xs) sprites@(_, _, _, bossSprite) =
-    Color red (drawBox (BossObject boss)) : -- hitbox
-    objectToPicture (BossObject boss) (rotate 270 (scale 8 8 bossSprite)) :
-    objectsToPictures xs sprites
-objectsToPictures _ _ = []
+allHitboxesToPictures :: GameState -> Picture
+allHitboxesToPictures gs = pictures (hitboxToPicture (player gs) :
+                                     map hitboxToPicture (enemies gs) ++
+                                     map hitboxToPicture (bullets gs))
 
-objectToPicture :: Object -> Picture -> Picture
-objectToPicture obj = uncurry translate (positionToTuple (objectPosition obj))
+hitboxToPicture :: GameObject a => a -> Picture
+hitboxToPicture obj = Color red (drawBox obj)
+
+playerToPicture :: Player -> Sprite -> Picture
+playerToPicture player sprite =
+    uncurry translate (position player) (rotate 90 (scale 2 2 sprite))
+
+enemiesToPictures :: [Enemy] -> (Sprite, Sprite, Sprite) -> [Picture]
+enemiesToPictures [] _ = [Blank]
+enemiesToPictures (enemy:enemies) (basicEnemySprite, toughEnemySprite, bossSprite)
+    | enemyType enemy == BasicEnemy =
+        basicEnemyToPicture enemy basicEnemySprite :
+        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+    | enemyType enemy == ToughEnemy =
+        toughEnemyToPicture enemy toughEnemySprite :
+        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+    | enemyType enemy == BossEnemy =
+        bossToPicture enemy bossSprite :
+        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+
+basicEnemyToPicture :: Enemy -> Sprite -> Picture
+basicEnemyToPicture enemy sprite =
+    uncurry translate (position enemy) (rotate 270 (scale 2 2 sprite))
+
+toughEnemyToPicture :: Enemy -> Sprite -> Picture
+toughEnemyToPicture enemy sprite =
+    uncurry translate (position enemy) (rotate 270 (scale 4 4 sprite))
+
+bossToPicture :: Enemy -> Sprite -> Picture
+bossToPicture boss sprite =
+    uncurry translate (position boss) (rotate 270 (scale 8 8 sprite))
+
+bulletsToPictures :: [Bullet] -> Sprite -> [Picture]
+bulletsToPictures bullets sprite = map (`bulletToPicture` sprite) bullets
+
+bulletToPicture :: Bullet -> Sprite -> Picture
+bulletToPicture bullet sprite
+    | bulletDirection bullet == (1, 0) =
+        uncurry translate (position bullet) (rotate 90 (scale 1.5 1.5 sprite))
+    | otherwise =
+        uncurry translate (position bullet) (rotate 270 (scale 1.5 1.5 sprite))
 
 buttonsToPictures :: [Button] -> [Picture]
-buttonsToPictures [] = []
-buttonsToPictures (x:xs) = Color white (buttonToPicture (ButtonObject x)) :
-                           buttonTextToPicture (ButtonObject x) :
-                           buttonsToPictures xs
+buttonsToPictures = map buttonToPicture
 
-buttonToPicture :: Object -> Picture
-buttonToPicture (ButtonObject button) = drawBox (ButtonObject button)
-buttonToPicture _ = Blank
+buttonToPicture :: Button -> Picture
+buttonToPicture button =
+    pictures (color red (drawBox button) : [buttonTextToPicture button])
 
-buttonTextToPicture :: Object -> Picture
-buttonTextToPicture (ButtonObject button) = translate (x - 75) y pic
-    where (x, y) = positionToTuple (objectPosition (ButtonObject button))
+buttonTextToPicture :: Button -> Picture
+buttonTextToPicture button = translate (x - 75) y pic
+    where (x, y) = position button
           pic = scale 0.2 0.2 (text (buttonText button))
 
 buttonText :: Button -> String
@@ -71,11 +97,9 @@ buttonText (Button _ _ ToMainMenu) = "Main Menu"
 -- buttonText _ = "Button"
 
 -- handy for hitboxes and buttons
-drawBox :: Object -> Picture
-drawBox obj = polygon [positionToTuple (objectCornerNW obj),
-                        positionToTuple (objectCornerNE obj),
-                        positionToTuple (objectCornerSE obj),
-                        positionToTuple (objectCornerSW obj)]
+drawBox :: GameObject a => a -> Picture
+drawBox obj = polygon [nW, nE, sE, sW]
+    where (nW, nE, sE, sW) = objectCorners obj
 
 timerToPicture :: GameState -> Picture
 timerToPicture gs
@@ -116,8 +140,8 @@ loadBossSprite = loadBMP "./sprites/Ships/EnemyKamikaze.bmp"
 
 -- # Helper Functions # --
 
-positionToTuple :: Position -> (Float, Float)
-positionToTuple (Point x y) = (x, y)
+-- positionToTuple :: Position -> (Float, Float)
+-- positionToTuple (Point x y) = (x, y)
 
 -- This helper function rounds down a Float to the nearest whole number.
 floorFloat :: Float -> Int

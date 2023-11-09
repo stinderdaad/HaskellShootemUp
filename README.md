@@ -8,9 +8,9 @@ If you manage to survive long enough a boss will spawn and if you beat it you co
 
 ## Controls
 - You move the plane with either 'wasd' or the arrow keys.
-- You can shoot by pressing the spacebar.
-- Pressing 'Esc' will pause the game.
-- You can pickup items by flying over them.
+- You shoot automatically.
+- Pressing 'p' will pause the game.
+- You can pickup items by flying over them. (there are no items yet)
 
 ## Assets
 All sprites are from Kenney game assets:
