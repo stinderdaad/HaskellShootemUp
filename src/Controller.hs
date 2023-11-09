@@ -6,6 +6,7 @@ import System.Exit
 import System.Random
 import Graphics.Gloss.Interface.IO.Game
 import Graphics.Gloss.Data.Vector (normalizeV)
+import GHC.Base (VecCount)
 
 -- # Impure # --
 
@@ -103,7 +104,14 @@ handleSpecialKeyUp _ gs = gs
 
 newPosition :: Position -> Direction -> Float -> Position
 newPosition (x, y) dir speed = (x + (dirX * speed), y + (dirY * speed))
-    where (dirX, dirY) = normalizeV dir
+    where (dirX, dirY) = normalizeDirection dir
+
+normalizeDirection :: Vector -> Vector
+normalizeDirection (0, 0) = (0, 0)
+normalizeDirection (0, y) = (0, y / abs y)
+normalizeDirection (x, 0) = (x / abs x, 0)
+normalizeDirection (x, y) =  (x / magnitude, y / magnitude)
+    where magnitude = sqrt (x^2 + y^2)
 
 addDirections :: Direction -> Direction -> Direction
 addDirections (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
