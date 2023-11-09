@@ -16,8 +16,8 @@ view gs = do
     bossSprite <- loadBossSprite
     return (pictures (
             [playerToPicture (player gs) playerSprite] ++
-            bulletsToPictures (bullets gs) bulletSprite ++
             enemiesToPictures (enemies gs) (basicEnemySprite, basicEnemySprite, bossSprite) ++
+            bulletsToPictures (bullets gs) bulletSprite ++
             [timerToPicture gs] ++
             [scoreToPicture gs] ++
             [livesToPicture gs] ++

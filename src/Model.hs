@@ -220,7 +220,7 @@ level1 :: Settings
 level1 = Settings 0.2 0.2 [basicEnemy] basicBoss
 
 level2 :: Settings
-level2 = Settings 0.3 0.3 [basicEnemy, toughEnemy] basicBoss
+level2 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
 
 -- pos dir speed health size attack reloadTime timeToNextReload
 initPlayer :: Player
@@ -234,21 +234,6 @@ toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 10 (50, 120) BasicAttack 200 1.
 
 basicBoss :: Enemy
 basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.2 50 (90, 180) BasicAttack 1000 1.5 0
-
--- basicBullet :: Object -> Bullet
--- basicBullet (PlayerObject player) = Bullet playerBulletSpawn (Vector 1 0) 15 (40, 20) 0.2
---     where playerBulletSpawn = Point (x + (fromIntegral w/2.0) + 25) y
---           (Point x y) = playerPosition player
---           (w, _) = playerSize player
--- basicBullet (EnemyObject enemy) = Bullet enemyBulletSpawn (Vector (-1) 0) 10 (2, 2) 0.5
---     where enemyBulletSpawn = Point (x - (fromIntegral w/2.0) - 25) y
---           (Point x y) = enemyPosition enemy
---           (w, _) = enemySize enemy
--- basicBullet (BossObject boss) = Bullet bossBulletSpawn (Vector (-1) 0) 10 (2, 2) 0.1
---     where bossBulletSpawn = Point (x - (fromIntegral w/2.0) - 25) y
---           (Point x y) = enemyPosition boss
---           (w, _) = enemySize boss
--- basicBullet _ = error "Cannot create bullet from bullet or item"
 
 startButton :: Button
 startButton = Button (0, 75) (200, 50) Start
@@ -289,6 +274,21 @@ highScoresButtons = [mainMenuButton]
 
 -- # Functions # --
 
+getBoss :: [Enemy] -> Enemy
+getBoss [] = error "No boss in list"
+getBoss (enemy:enemies)
+    | enemyType enemy == BossEnemy = enemy
+    | otherwise = getBoss enemies
+
+filterPlayerBullets :: [Bullet] -> [Bullet]
+filterPlayerBullets bullets =
+    [bullet | bullet <- bullets, bulletDirection bullet == (1, 0)]
+
+filterEnemyBullets :: [Bullet] -> [Bullet]
+filterEnemyBullets bullets =
+    [bullet | bullet <- bullets, bulletDirection bullet == (-1, 0)]
+
+
 objectCorners :: GameObject a => a -> (Position, Position, Position, Position)
 objectCorners obj = ((x - (fromIntegral w/2.0), y + (fromIntegral h/2.0)), -- NW
                      (x + (fromIntegral w/2.0), y + (fromIntegral h/2.0)), -- NE
@@ -297,134 +297,31 @@ objectCorners obj = ((x - (fromIntegral w/2.0), y + (fromIntegral h/2.0)), -- NW
                         where (x, y) = position obj
                               (w, h) = size obj
 
-positionInObject :: GameObject a => Position -> a -> Bool
-positionInObject pos obj = positionInObject' pos (position obj) (size obj)
+collision :: (CanCollide a, CanCollide b) => a -> b -> a
+collision obj1 obj2
+    | collision' obj1 obj2 = hit obj1
+    | otherwise = obj1
 
-positionInObject' :: Position -> Position -> (Int, Int) -> Bool
-positionInObject' (xPos, yPos) (xObj, yObj) (objWidth, objHeight) =
+collision' :: (CanCollide a, CanCollide b) => a -> b -> Bool
+collision' obj1 obj2 = collision'' obj1 obj2 || collision'' obj2 obj1
+
+collision'' :: (CanCollide a, CanCollide b)  => a -> b -> Bool
+collision'' obj1 obj2 =
+    positionInObject cornerNW obj2 ||
+    positionInObject cornerNE obj2 ||
+    positionInObject cornerSE obj2 ||
+    positionInObject cornerSW obj2
+        where (cornerNW, cornerNE, cornerSE, cornerSW) = objectCorners obj1
+
+positionInObject :: GameObject a => Position -> a -> Bool
+positionInObject (xPos, yPos) obj =
     xPos >= xObj - (fromIntegral objWidth / 2.0)
     && xPos <= xObj + (fromIntegral objWidth / 2.0)
     && yPos >= yObj - (fromIntegral objHeight / 2.0)
     && yPos <= yObj + (fromIntegral objHeight / 2.0)
+    where (xObj, yObj) = position obj
+          (objWidth, objHeight) = size obj
 
---rework this
-resetCooldownPlayer :: Player -> Player
-resetCooldownPlayer player = player { playerTimeToNextReload = 3 }
-
-resetCooldownEnemy :: Enemy -> Enemy
-resetCooldownEnemy enemy = enemy { enemyTimeToNextReload = 3 }
-
-getBoss :: [Enemy] -> Enemy
-getBoss [] = error "No boss in list"
-getBoss (enemy:enemies)
-    | enemyType enemy == BossEnemy = enemy
-    | otherwise = getBoss enemies
-
--- shoot :: Object -> [Object]
--- shoot obj@(PlayerObject player)
---     | playerTimeToNextReload player > 0 = []
---     | playerAttack player == Basic = [BulletObject (basicBullet obj)]
---     | otherwise = []
--- shoot obj@(EnemyObject enemy)
---     | enemyTimeToNextReload enemy > 0 = [obj]
---     | enemyAttack enemy == Basic = EnemyObject enemy{ enemyTimeToNextReload = reloadTime (basicBullet obj) } :
---                                    [BulletObject (basicBullet obj)]
---     | otherwise = [obj]
--- shoot obj@(BossObject boss)
---     | enemyTimeToNextReload boss > 0 = [obj]
---     | enemyAttack boss == Basic = BossObject boss{ enemyTimeToNextReload = reloadTime (basicBullet obj) } :
---                                   [BulletObject (basicBullet obj)]
---     | otherwise = [obj]
--- shoot obj = [obj]
-
--- playerShoot :: GameState -> GameState
--- playerShoot gs
---         | playerTimeToNextReload player' > 0 = gs
---         | playerAttack player' == Basic = gs {
---             objects = objects ++ shoot (PlayerObject player'),
---         }
---     where player' = player gs
-
--- not including buttons
--- allObjects :: GameState -> [Object]
--- allObjects gs = PlayerObject(player gs) : objects gs
-
--- objectPosition :: Object -> Position
--- objectPosition (PlayerObject player) = playerPosition player
--- objectPosition (EnemyObject enemy) = enemyPosition enemy
--- objectPosition (BossObject boss) = enemyPosition boss
--- objectPosition (BulletObject bullet) = bulletPosition bullet
--- objectPosition (ItemObject item) = itemPosition item
--- objectPosition (ButtonObject button) = buttonPosition button
--- objectPosition _ = Point 0 0
-
--- objectSize :: Object -> (Int, Int)
--- objectSize (PlayerObject player) = playerSize player
--- objectSize (EnemyObject enemy) = enemySize enemy
--- objectSize (BossObject boss) = enemySize boss
--- objectSize (BulletObject bullet) = bulletSize bullet
--- objectSize (ItemObject item) = itemSize item
--- objectSize (ButtonObject button) = buttonSize button
--- objectSize _ = (0, 0)
-
--- isPlayer :: Object -> Bool
--- isPlayer (PlayerObject _) = True
--- isPlayer _ = False
-
--- objectCornerNW :: Object -> Position
--- objectCornerNW obj = Point (x - (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))
---                     where (Point x y) = objectPosition obj
---                           (w, h) = objectSize obj
-
--- objectCornerNE :: Object -> Position
--- objectCornerNE obj = Point (x + (fromIntegral w/2.0)) (y + (fromIntegral h/2.0))
---                     where (Point x y) = objectPosition obj
---                           (w, h) = objectSize obj
-
--- objectCornerSE :: Object -> Position
--- objectCornerSE obj = Point (x + (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))
---                     where (Point x y) = objectPosition obj
---                           (w, h) = objectSize obj
-
--- objectCornerSW :: Object -> Position
--- objectCornerSW obj = Point (x - (fromIntegral w/2.0)) (y - (fromIntegral h/2.0))
---                     where (Point x y) = objectPosition obj
---                           (w, h) = objectSize obj
-
--- objectHitObject :: Object -> Object -> Bool
--- objectHitObject obj1 obj2 = objectHitObject' obj1 obj2 ||
---                             objectHitObject' obj2 obj1
-
--- objectHitObject' :: Object -> Object -> Bool
--- objectHitObject' obj1 obj2 =
---     positionInObject (objectCornerNW obj1) obj2 ||
---     positionInObject (objectCornerNE obj1) obj2 ||
---     positionInObject (objectCornerSE obj1) obj2 ||
---     positionInObject (objectCornerSW obj1) obj2
-
--- positionInObject :: Position -> Object -> Bool
--- positionInObject pos obj = positionInObject' pos (objectPosition obj) (objectSize obj)
-
--- positionInObject' :: Position -> Position -> (Int, Int) -> Bool
--- positionInObject' (Point xPos yPos) (Point xObj yObj) (objWidth, objHeight) =
---     xPos >= xObj - (fromIntegral objWidth / 2.0)
---     && xPos <= xObj + (fromIntegral objWidth / 2.0)
---     && yPos >= yObj - (fromIntegral objHeight / 2.0)
---     && yPos <= yObj + (fromIntegral objHeight / 2.0)
-
--- playerHit :: Player -> Player
--- playerHit player = player { playerHealth = playerHealth player - 1 }
-
--- enemyHit :: Enemy -> Enemy
--- enemyHit enemy = enemy { enemyHealth = enemyHealth enemy - 1 }
-
--- isDead :: Object -> Bool
--- isDead (PlayerObject player) = playerHealth player <= 0
--- isDead (EnemyObject enemy) = enemyHealth enemy <= 0
--- isDead (BossObject boss) = enemyHealth boss <= 0
--- isDead (BulletObject bullet) = False
--- isDead (ItemObject item) = False
--- isDead DeadObject = True
 
 -- countPoints :: [Object] -> Int
 -- countPoints [] = 0

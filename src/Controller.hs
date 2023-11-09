@@ -46,6 +46,9 @@ step secs gs
                      checkBossDead .
                      --awardPoints .
                      --checkCollisions .
+
+                     --awardPoints .
+                     checkAllCollisions .
                      checkPlayerDead .
                      --checkCollisionPlayer .
                      shooting
@@ -163,26 +166,6 @@ updateBullets = map updateBullet
 updateBullet :: Bullet -> Bullet
 updateBullet bullet = bullet { bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }
 
--- updateObject :: Float -> Object -> Object
--- updateObject _ (BulletObject bullet) = BulletObject bullet {
---     bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }
--- updateObject secs (PlayerObject player) = PlayerObject player {
---     playerPosition = newPosition (playerPosition player) (playerDirection player) (playerSpeed player),
---     playerTimeToNextReload = playerTimeToNextReload player - secs
--- }
--- updateObject secs (EnemyObject enemy) = EnemyObject enemy {
---     enemyPosition = newPosition (enemyPosition enemy) (enemyDirection enemy) (enemySpeed enemy),
---     enemyTimeToNextReload = enemyTimeToNextReload enemy - secs
--- }
--- updateObject secs (BossObject boss) = BossObject boss {
---     enemyPosition = newPosition (enemyPosition boss) (enemyDirection boss) (enemySpeed boss),
---     enemyTimeToNextReload = enemyTimeToNextReload boss - secs
--- }
--- updateObject secs (ItemObject item) = ItemObject item
-
--- updateObjects :: Float -> [Object] -> [Object]
--- updateObjects secs = map (updateObject secs)
-
 spawnEnemiesItems :: Float -> Float -> GameState -> GameState
 spawnEnemiesItems randomFloat1 randomFloat2 gs
         | elem toughEnemy enemies' &&
@@ -197,8 +180,17 @@ spawnEnemiesItems randomFloat1 randomFloat2 gs
           enemySpawnRate' = enemySpawnRate (settings gs)
           enemies' = enemiesInLevel (settings gs)
 
--- checkCollisions :: GameState -> GameState
--- checkCollisions gs = gs { objects = filter (not . isPlayer) (map (`checkCollisions'` allObjects gs) (allObjects gs)) }
+checkAllCollisions :: GameState -> GameState
+checkAllCollisions gs = gs {
+    --player = collideWithObjects (enemies gs) $ collideWithObjects (bullets gs) (player gs),
+    enemies = collideWithObjects (enemies gs) (filterPlayerBullets (bullets gs)),
+    bullets = filterEnemyBullets (bullets gs) ++
+              collideWithObjects (filterPlayerBullets (bullets gs)) (enemies gs)
+}
+
+collideWithObjects :: (CanCollide a, CanCollide b) => [a] -> [b] -> [a]
+collideWithObjects objs1 objs2 = map (\obj -> foldl collision obj objs2) objs1
+
 
 -- checkCollisionPlayer :: GameState -> GameState
 -- checkCollisionPlayer gs = gs { player = hitPlayer }
