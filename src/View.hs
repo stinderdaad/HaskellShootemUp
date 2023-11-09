@@ -31,7 +31,8 @@ view gs = do
 allHitboxesToPictures :: GameState -> Picture
 allHitboxesToPictures gs = pictures (hitboxToPicture (player gs) :
                                      map hitboxToPicture (enemies gs) ++
-                                     map hitboxToPicture (bullets gs))
+                                     map hitboxToPicture (bullets gs) ++
+                                     map hitboxToPicture (walls gs))
 
 hitboxToPicture :: GameObject a => a -> Picture
 hitboxToPicture obj = Color red (drawBox obj)

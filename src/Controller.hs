@@ -14,7 +14,7 @@ step :: Float -> GameState -> IO GameState
 step secs gs
         | menuState == Quitting = exitSuccess
         | menuState == Playing && currentTime == (-10) =
-            print gs >>
+            --print gs >>
             return (updateGs gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
@@ -22,7 +22,7 @@ step secs gs
                            time = -10
                         })
         | menuState == Playing && currentTime <= 0 =
-            print gs >>
+            --print gs >>
             return ((updateGs . spawnBoss) gs{
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
@@ -32,7 +32,8 @@ step secs gs
         | menuState == Playing = do
             randomFloat1 <- randomIO :: IO Float
             randomFloat2 <- randomIO :: IO Float
-            print gs
+            --print gs
+            print (show (length (bullets gs)))
             return ((updateGs . spawnEnemiesItems randomFloat1 randomFloat2) gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
@@ -177,12 +178,13 @@ spawnEnemiesItems randomFloat1 randomFloat2 gs
 
 checkAllCollisions :: GameState -> GameState
 checkAllCollisions gs = gs {
-    player = head (collideWithObjects [player gs] (filterEnemyBullets (bullets gs)) ++
+    player = head (collideWithObjects [player gs] (filterEnemyBullets bulletsInGame) ++
              collideWithObjects [player gs] (enemies gs)),
-    enemies = collideWithObjects (enemies gs) (filterPlayerBullets (bullets gs)),
-    bullets = collideWithObjects (filterEnemyBullets (bullets gs)) [player gs] ++
-              collideWithObjects (filterPlayerBullets (bullets gs)) (enemies gs)
+    enemies = collideWithObjects (enemies gs) (filterPlayerBullets bulletsInGame),
+    bullets = collideWithObjects (filterEnemyBullets bulletsInGame) [player gs] ++
+              collideWithObjects (filterPlayerBullets bulletsInGame) (enemies gs)
 }
+    where bulletsInGame = collideWithObjects (bullets gs) (walls gs)
 
 collideWithObjects :: (CanCollide a, CanCollide b) => [a] -> [b] -> [a]
 collideWithObjects objs1 objs2 = map (\obj -> foldl collision obj objs2) objs1

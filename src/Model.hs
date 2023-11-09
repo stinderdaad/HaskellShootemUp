@@ -36,6 +36,7 @@ data GameState = GameState {
     enemies :: [Enemy],
     bullets :: [Bullet],
     items :: [Item],
+    walls :: [Wall],
     score :: Int,
     time :: Float,
     settings :: Settings
@@ -95,6 +96,11 @@ data Item = Item {
     timer :: Float
 } deriving (Show, Eq)
 
+data Wall = Wall {
+    wallPosition :: Position,
+    wallSize :: (Int, Int)
+} deriving (Show)
+
 data Button = Button {
     buttonPosition :: Position,
     buttonSize :: (Int, Int),
@@ -134,6 +140,12 @@ instance GameObject Item where
     position = itemPosition
     size :: Item -> (Int, Int)
     size = itemSize
+
+instance GameObject Wall where
+    position :: Wall -> Position
+    position = wallPosition
+    size :: Wall -> (Int, Int)
+    size = wallSize
 
 instance GameObject Button where
     position :: Button -> Position
@@ -187,6 +199,12 @@ instance CanCollide Bullet where
     isDead :: Bullet -> Bool
     isDead bullet = pierce bullet <= 0
 
+instance CanCollide Wall where
+    hit :: Wall -> Wall
+    hit wall = wall
+    isDead :: Wall -> Bool
+    isDead wall = False
+
 
 -- # Initialisations # --
 
@@ -198,6 +216,7 @@ initState = GameState {
     enemies = [],
     bullets = [],
     items = [],
+    walls = defaultWalls,
     score = 0,
     time = 0,
     settings = level1
@@ -211,6 +230,7 @@ initLevel = GameState {
     enemies = [],
     bullets = [],
     items = [],
+    walls = defaultWalls,
     score = 0,
     time = 100,
     settings = level2
@@ -234,6 +254,12 @@ toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 10 (50, 120) BasicAttack 200 1.
 
 basicBoss :: Enemy
 basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.2 50 (90, 180) BasicAttack 1000 1.5 0
+
+defaultWalls :: [Wall]
+defaultWalls = [Wall (0, 550) (1600, 300), -- up
+                Wall (0, -550) (1600, 300), -- down
+                Wall (-950, 0) (300, 800), -- left
+                Wall (950, 0) (300, 800)] -- right
 
 startButton :: Button
 startButton = Button (0, 75) (200, 50) Start
@@ -320,7 +346,6 @@ positionInObject (xPos, yPos) obj =
     && yPos <= yObj + (fromIntegral objHeight / 2.0)
     where (xObj, yObj) = position obj
           (objWidth, objHeight) = size obj
-
 
 countPoints :: [Enemy] -> Int
 countPoints [] = 0
