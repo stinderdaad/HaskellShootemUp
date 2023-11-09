@@ -147,7 +147,7 @@ instance CanShoot Player where
         | playerTimeToNextReload player > 0 = (player, [])
         | playerAttack player == BasicAttack =
             (player { playerTimeToNextReload = playerReloadTime player},
-            [Bullet (playerBulletSpawn player) (1, 0) 15 (40, 20) 1])
+            [Bullet (playerBulletSpawn player) (1, 0) 15 (25, 15) 1])
         | otherwise = (player, [])
         where
             playerBulletSpawn player' = (x + (fromIntegral w / 2.0) + 25, y)
@@ -161,7 +161,7 @@ instance CanShoot Enemy where
         | enemyTimeToNextReload enemy > 0 = (enemy, [])
         | enemyAttack enemy == BasicAttack =
             (enemy { enemyTimeToNextReload = enemyReloadTime enemy } ,
-            [Bullet (enemyBulletSpawn enemy) (-1, 0) 7.5 (40, 20) 1])
+            [Bullet (enemyBulletSpawn enemy) (-1, 0) 7.5 (25, 15) 1])
         | otherwise = (enemy, [])
         where
             enemyBulletSpawn enemy' = (x - (fromIntegral w / 2.0) - 25, y)
@@ -217,10 +217,10 @@ initLevel = GameState {
 }
 
 level1 :: Settings
-level1 = Settings 0.2 0.2 [basicEnemy] basicBoss
+level1 = Settings 1 1 [basicEnemy] basicBoss
 
 level2 :: Settings
-level2 = Settings 1 1 [basicEnemy, toughEnemy] basicBoss
+level2 = Settings 1.5 1.5 [basicEnemy, toughEnemy] basicBoss
 
 -- pos dir speed health size attack reloadTime timeToNextReload
 initPlayer :: Player

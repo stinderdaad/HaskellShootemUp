@@ -48,6 +48,11 @@ step secs gs
                      --checkCollisions .
 
                      --awardPoints .
+
+                     --awardPoints .
+                     --checkCollisions .
+
+                     --awardPoints .
                      checkAllCollisions .
                      checkPlayerDead .
                      --checkCollisionPlayer .
@@ -91,7 +96,6 @@ handleSpecialKeyDown KeyLeft gs = movePlayerLeft gs
 handleSpecialKeyDown KeyRight gs = movePlayerRight gs
 handleSpecialKeyDown KeyUp gs = movePlayerUp gs
 handleSpecialKeyDown KeyDown gs = movePlayerDown gs
--- handleSpecialKeyDown KeySpace gs = shooting gs -- maybe auto shoot? no reason not to spam
 handleSpecialKeyDown _ gs = gs
 
 handleSpecialKeyUp :: SpecialKey -> GameState -> GameState
@@ -182,9 +186,10 @@ spawnEnemiesItems randomFloat1 randomFloat2 gs
 
 checkAllCollisions :: GameState -> GameState
 checkAllCollisions gs = gs {
-    --player = collideWithObjects (enemies gs) $ collideWithObjects (bullets gs) (player gs),
+    player = head (collideWithObjects [player gs] (filterEnemyBullets (bullets gs)) ++
+             collideWithObjects [player gs] (enemies gs)),
     enemies = collideWithObjects (enemies gs) (filterPlayerBullets (bullets gs)),
-    bullets = filterEnemyBullets (bullets gs) ++
+    bullets = collideWithObjects (filterEnemyBullets (bullets gs)) [player gs] ++
               collideWithObjects (filterPlayerBullets (bullets gs)) (enemies gs)
 }
 

@@ -15,6 +15,7 @@ view gs = do
     bulletSprite <- loadBulletSprite
     bossSprite <- loadBossSprite
     return (pictures (
+            allHitboxesToPictures gs : -- only for debugging
             [playerToPicture (player gs) playerSprite] ++
             enemiesToPictures (enemies gs) (basicEnemySprite, basicEnemySprite, bossSprite) ++
             bulletsToPictures (bullets gs) bulletSprite ++
@@ -27,43 +28,10 @@ view gs = do
 
 -- # Pictures # --
 
--- objectsToPictures :: [Object] -> (Picture, Picture, Picture, Picture) -> [Picture]
--- objectsToPictures [] _ = []
--- objectsToPictures (PlayerObject player:xs) sprites@(playerSprite, _, _, _) =
---     Color green (drawBox (PlayerObject player)) : -- hitbox
---     objectToPicture (PlayerObject player) (rotate 90 (scale 2 2 playerSprite)) :
---     objectsToPictures xs sprites
--- objectsToPictures (EnemyObject enemy:xs) sprites@(_, basicEnemySprite, _, _) =
---     Color red (drawBox (EnemyObject enemy)) : -- hitbox
---     objectToPicture (EnemyObject enemy) (rotate 270 (scale 2 2 basicEnemySprite)) :
---     objectsToPictures xs sprites
--- objectsToPictures (BulletObject bullet:xs) sprites@(_, _, bulletSprite, _) =
---     Color black (drawBox (BulletObject bullet)) :  -- hitbox
---     objectToPicture (BulletObject bullet) (rotate 90 (scale 1.5 1.5 bulletSprite)) :
---     objectsToPictures xs sprites
--- objectsToPictures (BossObject boss:xs) sprites@(_, _, _, bossSprite) =
---     Color red (drawBox (BossObject boss)) : -- hitbox
---     objectToPicture (BossObject boss) (rotate 270 (scale 8 8 bossSprite)) :
---     objectsToPictures xs sprites
--- objectsToPictures _ _ = []
-
--- objectToPicture :: Object -> Picture -> Picture
--- objectToPicture obj = uncurry translate (positionToTuple (objectPosition obj))
-
--- buttonsToPictures :: [Button] -> [Picture]
--- buttonsToPictures [] = []
--- buttonsToPictures (x:xs) = Color white (buttonToPicture (ButtonObject x)) :
---                            buttonTextToPicture (ButtonObject x) :
---                            buttonsToPictures xs
-
--- buttonToPicture :: Object -> Picture
--- buttonToPicture (ButtonObject button) = drawBox (ButtonObject button)
--- buttonToPicture _ = Blank
-
--- buttonTextToPicture :: Object -> Picture
--- buttonTextToPicture (ButtonObject button) = translate (x - 75) y pic
---     where (x, y) = positionToTuple (objectPosition (ButtonObject button))
---           pic = scale 0.2 0.2 (text (buttonText button))
+allHitboxesToPictures :: GameState -> Picture
+allHitboxesToPictures gs = pictures (hitboxToPicture (player gs) :
+                                     map hitboxToPicture (enemies gs) ++
+                                     map hitboxToPicture (bullets gs))
 
 hitboxToPicture :: GameObject a => a -> Picture
 hitboxToPicture obj = Color red (drawBox obj)
@@ -101,8 +69,11 @@ bulletsToPictures :: [Bullet] -> Sprite -> [Picture]
 bulletsToPictures bullets sprite = map (`bulletToPicture` sprite) bullets
 
 bulletToPicture :: Bullet -> Sprite -> Picture
-bulletToPicture bullet sprite =
-    uncurry translate (position bullet) (rotate 90 (scale 1.5 1.5 sprite))
+bulletToPicture bullet sprite
+    | bulletDirection bullet == (1, 0) =
+        uncurry translate (position bullet) (rotate 90 (scale 1.5 1.5 sprite))
+    | otherwise =
+        uncurry translate (position bullet) (rotate 270 (scale 1.5 1.5 sprite))
 
 buttonsToPictures :: [Button] -> [Picture]
 buttonsToPictures = map buttonToPicture
