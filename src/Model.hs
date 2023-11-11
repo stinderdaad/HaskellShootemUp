@@ -59,7 +59,7 @@ data Menu = MainMenu | Playing | PauseMenu | GameOverMenu |
 data Function = Start | ToHighScore | Quit | Retry | ToMainMenu | Resume
     deriving (Show, Eq)
 
-data Attack = BasicAttack | ItemAttack Item
+data Attack = BasicAttack | TargetedAttack Player | ItemAttack Item
     deriving (Show, Eq)
 
 data EnemyType = BasicEnemy | ToughEnemy | BossEnemy
@@ -74,7 +74,7 @@ data Player = Player {
     playerAttack :: Attack,
     playerReloadTime :: Float,
     playerTimeToNextReload :: Float
-} deriving (Show)
+} deriving (Show, Eq)
 
 data Enemy = Enemy {
     enemyType :: EnemyType,
@@ -180,10 +180,9 @@ instance CanShoot Enemy where
     shoot :: Enemy -> (Enemy, [Bullet])
     shoot enemy
         | enemyTimeToNextReload enemy > 0 = (enemy, [])
-        | enemyAttack enemy == BasicAttack =
+        | otherwise =
             (enemy { enemyTimeToNextReload = enemyReloadTime enemy } ,
-            [Bullet (enemyBulletSpawn enemy) (-1, 0) 7.5 (25, 15) 1])
-        | otherwise = (enemy, [])
+            [Bullet (enemyBulletSpawn enemy) (enemyAttackDirection enemy (enemyAttack enemy)) 7.5 (25, 15) 1])
         where
             enemyBulletSpawn enemy' = (x - (fromIntegral w / 2.0) - 25, y)
                 where
@@ -262,7 +261,7 @@ toughEnemy :: Enemy
 toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 10 (50, 120) BasicAttack 200 1.5 0
 
 basicBoss :: Enemy
-basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.2 50 (90, 180) BasicAttack 1000 1.5 0
+basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.2 30 (90, 180) BasicAttack 1000 0.3 0
 
 defaultWalls :: [Wall]
 defaultWalls = [Wall (0, 550) (2000, 300), -- up
@@ -309,11 +308,34 @@ highScoresButtons = [mainMenuButton]
 
 -- # Functions # --
 
+enemyAttackDirection :: Enemy -> Attack -> Direction
+enemyAttackDirection enemy BasicAttack = (-1, 0)
+enemyAttackDirection enemy (TargetedAttack target) = direction enemy target
+
+direction :: (GameObject a, GameObject b) => a -> b -> Direction
+direction obj1 obj2 = normalizeDirection (x2 - x1, y2 - y1)
+    where (x1, y1) = position obj1
+          (x2, y2) = position obj2
+
+normalizeDirection :: Vector -> Vector
+normalizeDirection (0, 0) = (0, 0)
+normalizeDirection (0, y) = (0, y / abs y)
+normalizeDirection (x, 0) = (x / abs x, 0)
+normalizeDirection (x, y) =  (x / magnitude, y / magnitude)
+    where magnitude = sqrt (x^2 + y^2)
+
 getBoss :: [Enemy] -> Enemy
 getBoss [] = error "No boss in list"
 getBoss (enemy:enemies)
     | enemyType enemy == BossEnemy = enemy
     | otherwise = getBoss enemies
+
+setBossTargetedAttack :: GameState -> GameState
+setBossTargetedAttack state = state { enemies = newEnemies }
+    where
+        boss = getBoss (enemies state)
+        newBoss = boss { enemyAttack = TargetedAttack (player state) }
+        newEnemies = newBoss : (enemies state \\[boss])
 
 filterPlayerBullets :: [Bullet] -> [Bullet]
 filterPlayerBullets bullets =

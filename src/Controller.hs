@@ -18,8 +18,8 @@ step secs gs
             fullHighScoreUpdater gs
             return (victory gs)
         | menuState == Playing && currentTime == bossTime =
-            --print gs >>
-            return (updateGs gs {
+            print gs >>
+            return ((updateGs . setBossTargetedAttack) gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
                            bullets = updateBullets (bullets gs),
@@ -137,12 +137,12 @@ newPosition :: Position -> Direction -> Float -> Position
 newPosition (x, y) dir speed = (x + (dirX * speed), y + (dirY * speed))
     where (dirX, dirY) = normalizeDirection dir
 
-normalizeDirection :: Vector -> Vector
-normalizeDirection (0, 0) = (0, 0)
-normalizeDirection (0, y) = (0, y / abs y)
-normalizeDirection (x, 0) = (x / abs x, 0)
-normalizeDirection (x, y) =  (x / magnitude, y / magnitude)
-    where magnitude = sqrt (x^2 + y^2)
+-- normalizeDirection :: Vector -> Vector
+-- normalizeDirection (0, 0) = (0, 0)
+-- normalizeDirection (0, y) = (0, y / abs y)
+-- normalizeDirection (x, 0) = (x / abs x, 0)
+-- normalizeDirection (x, y) =  (x / magnitude, y / magnitude)
+--     where magnitude = sqrt (x^2 + y^2)
 
 addDirections :: Direction -> Direction -> Direction
 addDirections (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
@@ -263,7 +263,7 @@ spawnTough :: Float -> GameState -> GameState
 spawnTough yPos gs = gs { enemies = enemies gs ++ [toughEnemy { enemyPosition = (800, yPos) }] }
 
 spawnBoss :: GameState -> GameState
-spawnBoss gs = gs { enemies = enemies gs ++ [basicBoss] }
+spawnBoss gs = setBossTargetedAttack (gs { enemies = enemies gs ++ [bossInLevel (settings gs)] })
 
 checkButtonPress :: GameState -> Position -> GameState
 checkButtonPress gs pos
