@@ -59,7 +59,7 @@ data Menu = MainMenu | Playing | PauseMenu | GameOverMenu |
 data Function = Start | ToHighScore | Quit | Retry | ToMainMenu | Resume
     deriving (Show, Eq)
 
-data Attack = BasicAttack | TargetedAttack Player | ItemAttack Item
+data Attack = BasicAttack | TargetedAttack Player | ItemAttack Item | DualAttack Attack Attack
     deriving (Show, Eq)
 
 data EnemyType = BasicEnemy | ToughEnemy | BossEnemy
@@ -182,12 +182,7 @@ instance CanShoot Enemy where
         | enemyTimeToNextReload enemy > 0 = (enemy, [])
         | otherwise =
             (enemy { enemyTimeToNextReload = enemyReloadTime enemy } ,
-            [Bullet (enemyBulletSpawn enemy) (enemyAttackDirection enemy (enemyAttack enemy)) 7.5 (25, 15) 1])
-        where
-            enemyBulletSpawn enemy' = (x - (fromIntegral w / 2.0) - 25, y)
-                where
-                    (x, y) = position enemy'
-                    (w, _) = size enemy'
+            enemyAttackToBullets enemy (enemyAttack enemy))
 
 instance CanCollide Player where
     hit :: Player -> Player
@@ -240,15 +235,15 @@ initLevel = GameState {
     items = [],
     walls = defaultWalls,
     score = 0,
-    time = 3,
-    settings = level2
+    time = 0,
+    settings = level1
 }
 
 level1 :: Settings
-level1 = Settings 0.5 0.5 [basicEnemy] basicBoss
+level1 = Settings 0.5 0.5 [basicEnemy] dualBoss
 
 level2 :: Settings
-level2 = Settings 0.75 0.75 [basicEnemy, toughEnemy] basicBoss
+level2 = Settings 0.75 0.75 [basicEnemy, toughEnemy] basicBossFastAttack
 
 -- pos dir speed health size attack reloadTime timeToNextReload
 initPlayer :: Player
@@ -258,10 +253,19 @@ basicEnemy :: Enemy
 basicEnemy = Enemy BasicEnemy (800, 0) (-1, 0) 2.5 3 (25, 60) BasicAttack 50 3 0
 
 toughEnemy :: Enemy
-toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 10 (50, 120) BasicAttack 200 1.5 0
+toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 10 (50, 120) (TargetedAttack initPlayer) 200 1.5 0
 
 basicBoss :: Enemy
-basicBoss = Enemy BossEnemy (800, 0) (-1, 0) 0.2 30 (90, 180) BasicAttack 1000 0.3 0
+basicBoss = Enemy BossEnemy (850, 0) (-1, 0) 0.2 30 (90, 180) (TargetedAttack initPlayer) 1000 0.75 0
+
+dualBoss :: Enemy
+dualBoss = Enemy BossEnemy (850, 0) (-1, 0) 0.2 30 (90, 180) (DualAttack (TargetedAttack initPlayer) (TargetedAttack initPlayer)) 1000 0.75 0
+
+basicBossFastAttack :: Enemy
+basicBossFastAttack = Enemy BossEnemy (850, 0) (-1, 0) 0.2 30 (90, 180) (TargetedAttack initPlayer) 1000 0.2 0
+
+wallBoss :: Enemy
+wallBoss = Enemy BossEnemy (950, 0) (-1, 0) 2 75 (90, 799) BasicAttack 1000 999 999
 
 defaultWalls :: [Wall]
 defaultWalls = [Wall (0, 550) (2000, 300), -- up
@@ -308,14 +312,11 @@ highScoresButtons = [mainMenuButton]
 
 -- # Functions # --
 
-enemyAttackDirection :: Enemy -> Attack -> Direction
-enemyAttackDirection enemy BasicAttack = (-1, 0)
-enemyAttackDirection enemy (TargetedAttack target) = direction enemy target
-
-direction :: (GameObject a, GameObject b) => a -> b -> Direction
-direction obj1 obj2 = normalizeDirection (x2 - x1, y2 - y1)
-    where (x1, y1) = position obj1
-          (x2, y2) = position obj2
+direction :: Position -> Position -> Direction
+direction pos1 pos2 = normalizeDirection (x' - x, y' + y)
+    where
+        (x, y) = pos1
+        (x', y') = pos2
 
 normalizeDirection :: Vector -> Vector
 normalizeDirection (0, 0) = (0, 0)
@@ -330,12 +331,48 @@ getBoss (enemy:enemies)
     | enemyType enemy == BossEnemy = enemy
     | otherwise = getBoss enemies
 
-setBossTargetedAttack :: GameState -> GameState
-setBossTargetedAttack state = state { enemies = newEnemies }
+-- setBossTargetedAttack :: GameState -> GameState
+-- setBossTargetedAttack gs = gs { enemies = newEnemies }
+--     where
+--         boss = getBoss (enemies gs)
+--         newBoss = boss { enemyAttack = TargetedAttack (player gs) }
+--         newEnemies = newBoss : (enemies gs \\[boss])
+
+updateTargetedAttacks :: GameState -> GameState
+updateTargetedAttacks gs = gs { enemies = newEnemies }
     where
-        boss = getBoss (enemies state)
-        newBoss = boss { enemyAttack = TargetedAttack (player state) }
-        newEnemies = newBoss : (enemies state \\[boss])
+        newEnemies = map (updateTargetedAttack gs) (enemies gs)
+
+updateTargetedAttack :: GameState -> Enemy -> Enemy
+updateTargetedAttack gs enemy = enemy { enemyAttack = updateTargetedAttack' gs (enemyAttack enemy) }
+
+updateTargetedAttack' :: GameState -> Attack -> Attack
+updateTargetedAttack' gs (TargetedAttack target) = TargetedAttack (player gs)
+updateTargetedAttack' gs (DualAttack attack1 attack2) = DualAttack (updateTargetedAttack' gs attack1) (updateTargetedAttack' gs attack2)
+updateTargetedAttack' gs attack = attack
+
+enemyAttackToBullets :: Enemy -> Attack -> [Bullet]
+enemyAttackToBullets enemy BasicAttack =
+    [Bullet (enemyBulletSpawn enemy) (-1, 0) 7.5 (25, 15) 1]
+enemyAttackToBullets enemy (TargetedAttack target) =
+    [Bullet (enemyBulletSpawn enemy) (direction (enemyBulletSpawn enemy) (position target)) 7.5 (25, 15) 1]
+enemyAttackToBullets enemy (DualAttack (TargetedAttack target) (TargetedAttack target')) =
+    Bullet (x, y + 100) (direction (x, y + 100) (position target)) 7.5 (25, 15) 1 :
+    [Bullet (x, y - 100) (direction (x, y - 100) (position target')) 7.5 (25, 15) 1]
+        where (x, y) = enemyBulletSpawn enemy
+enemyAttackToBullets enemy (DualAttack attack1 attack2) =
+    map (moveBulletBy (0, 100)) (enemyAttackToBullets enemy attack1) ++
+    map (moveBulletBy (0, -100)) (enemyAttackToBullets enemy attack2)
+
+moveBulletBy :: Position -> Bullet -> Bullet
+moveBulletBy (x, y) bullet = bullet { bulletPosition = (x + x', y + y') }
+    where (x', y') = bulletPosition bullet
+
+enemyBulletSpawn :: Enemy -> Position
+enemyBulletSpawn enemy = (x - (fromIntegral w / 2.0) - 25, y)
+    where
+        (x, y) = position enemy
+        (w, _) = size enemy
 
 filterPlayerBullets :: [Bullet] -> [Bullet]
 filterPlayerBullets bullets =

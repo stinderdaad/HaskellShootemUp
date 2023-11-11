@@ -74,9 +74,13 @@ enemiesToPictures (enemy:enemies) (basicEnemySprite, toughEnemySprite, bossSprit
     | enemyType enemy == ToughEnemy =
         toughEnemyToPicture enemy toughEnemySprite :
         enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+    | enemyType enemy == BossEnemy && height == 799 =
+        bossToPicture enemy (translate 0 (-25) (scale 5 5 bossSprite)) :
+        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
     | enemyType enemy == BossEnemy =
         bossToPicture enemy bossSprite :
         enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+    where (width, height) = enemySize enemy
 
 basicEnemyToPicture :: Enemy -> Sprite -> Picture
 basicEnemyToPicture enemy sprite =

@@ -19,7 +19,7 @@ step secs gs
             return (victory gs)
         | menuState == Playing && currentTime == bossTime =
             print gs >>
-            return ((updateGs . setBossTargetedAttack) gs {
+            return (updateGs gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
                            bullets = updateBullets (bullets gs),
@@ -60,7 +60,8 @@ step secs gs
                      awardPoints .
                      checkPlayerDead .
                      checkAllCollisions .
-                     shooting
+                     shooting .
+                     updateTargetedAttacks
 
 input :: Event -> GameState -> IO GameState
 input event gs = do
@@ -263,7 +264,7 @@ spawnTough :: Float -> GameState -> GameState
 spawnTough yPos gs = gs { enemies = enemies gs ++ [toughEnemy { enemyPosition = (800, yPos) }] }
 
 spawnBoss :: GameState -> GameState
-spawnBoss gs = setBossTargetedAttack (gs { enemies = enemies gs ++ [bossInLevel (settings gs)] })
+spawnBoss gs =  gs { enemies = enemies gs ++ [bossInLevel (settings gs)] }
 
 checkButtonPress :: GameState -> Position -> GameState
 checkButtonPress gs pos
