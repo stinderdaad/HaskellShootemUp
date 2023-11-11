@@ -6,6 +6,7 @@ import System.Exit
 import System.Random
 import System.Directory
 import Graphics.Gloss.Interface.IO.Game
+import Data.List
 
 
 
@@ -222,7 +223,9 @@ checkAllCollisions gs = gs {
 }
     where playerAfterWallCollision = collideWithObjects [player gs] (walls gs)
           playerAfterEnemyCollision = collideWithObjects playerAfterWallCollision (enemies gs)
-          bulletsInGame = collideWithObjects (bullets gs) (walls gs)
+          bulletsInGame = collideWithObjects (filterEnemyBullets bulletsInGame') (filterPlayerBullets bulletsInGame') ++
+                          collideWithObjects (filterPlayerBullets bulletsInGame') (filterEnemyBullets bulletsInGame')
+          bulletsInGame' = collideWithObjects (bullets gs) (walls gs)
           enemiesInGame = collideWithObjects (enemies gs) (walls gs)
 
 collideWithObjects :: (CanCollide a, CanCollide b) => [a] -> [b] -> [a]

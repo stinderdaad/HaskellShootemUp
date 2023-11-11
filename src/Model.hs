@@ -236,7 +236,7 @@ initLevel = GameState {
     walls = defaultWalls,
     score = 0,
     time = 100,
-    settings = level3
+    settings = level2
 }
 
 level1 :: Settings
