@@ -6,7 +6,8 @@ import System.Exit
 import System.Random
 import System.Directory
 import Graphics.Gloss.Interface.IO.Game
-import View (loadHighScores)
+
+
 
 -- # Impure # --
 
@@ -16,21 +17,29 @@ step secs gs
         | menuState == HighScoreUpdater = do
             fullHighScoreUpdater gs
             return (victory gs)
-        | menuState == Playing && currentTime == (-10) =
+        | menuState == Playing && currentTime == bossTime =
             --print gs >>
             return (updateGs gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
                            bullets = updateBullets (bullets gs),
-                           time = -10
+                           time = bossTime
                         })
-        | menuState == Playing && currentTime <= 0 =
+        | menuState == Playing && currentTime <= 0 && null (enemies gs)=
             --print gs >>
             return ((updateGs . spawnBoss) gs{
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
                            bullets = updateBullets (bullets gs),
-                           time = -10
+                           time = bossTime
+                        })
+        | menuState == Playing && currentTime <= 0 =
+            --print gs >>
+            return (updateGs gs {
+                           player = updatePlayer secs (player gs),
+                           enemies = updateEnemies secs (enemies gs),
+                           bullets = updateBullets (bullets gs),
+                           time = bossWaitTime
                         })
         | menuState == Playing = do
             randomFloat1 <- randomIO :: IO Float
@@ -64,6 +73,10 @@ input event gs = do
         EventKey (MouseButton LeftButton) Down _ pos -> checkButtonPress gs pos
         _ -> gs
 
+-- this is duplicate code, but I did not want to risk dependency issues
+loadHighScores :: IO String
+loadHighScores = readFile "data/HighScores.txt"
+
 writeHighScores :: GameState -> String -> IO ()
 writeHighScores gs highScores = writeFile "data/HighScoresTemp.txt" (updateHighScores gs highScores)
 
@@ -79,6 +92,7 @@ fullHighScoreUpdater gs = do
     highScores <- loadHighScores
     writeHighScores gs highScores
     updateHighScoreFile
+
 
 -- # Input Functions # --
 

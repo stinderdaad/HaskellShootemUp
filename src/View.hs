@@ -6,6 +6,7 @@ import GHC.IO.Handle.FD
 import GHC.IO.IOMode
 import GHC.IO.Handle
 
+
 type Sprite = Picture
 
 -- # Impure # --
@@ -151,10 +152,12 @@ timerToPicture gs
     | menu gs == GameOverMenu = translate (-50) 300 (scale 0.2 0.2 gameOver)
     | menu gs == PauseMenu = translate (-50) 300 (scale 0.2 0.2 pause)
     | menu gs == VictoryMenu = translate (-50) 300 (scale 0.2 0.2 victory)
-    | time gs == -10 = translate (-50) 300 (scale 0.2 0.2 boss)
+    | time gs == bossTime = translate (-50) 300 (scale 0.2 0.2 boss)
+    | time gs == bossWaitTime = translate (-50) 300 (scale 0.2 0.2 bossComing)
     | otherwise = translate (-100) 300 (scale 0.2 0.2 pic)
     where pic = text ("Time until boss: " ++ show (floorFloat (time gs)))
           boss = text "Boss Battle!"
+          bossComing = text "Boss battle imminent!"
           pause = text "Paused"
           gameOver = text "Game Over"
           victory = text "Victory!"

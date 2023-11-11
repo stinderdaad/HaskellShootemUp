@@ -8,6 +8,15 @@ import System.Random
 import Data.List
 
 
+-- # Constants # --
+
+bossTime :: Float
+bossTime = -10
+
+bossWaitTime :: Float
+bossWaitTime = -1
+
+
 -- # Classes # --
 
 class GameObject a where
@@ -232,7 +241,7 @@ initLevel = GameState {
     items = [],
     walls = defaultWalls,
     score = 0,
-    time = 10,
+    time = 3,
     settings = level2
 }
 
