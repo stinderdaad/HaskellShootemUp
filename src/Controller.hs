@@ -7,6 +7,7 @@ import System.Random
 import System.Directory
 import Graphics.Gloss.Interface.IO.Game
 import Data.List
+import Text.ParserCombinators.ReadP (string)
 
 
 
@@ -18,6 +19,9 @@ step secs gs
         | menuState == HighScoreUpdater = do
             fullHighScoreUpdater gs
             return (victory gs)
+        | menuState == LoadCustomLevel = do
+            customSettings <- loadSettings
+            return (initLevel { settings = stringToSettings customSettings })
         | menuState == Playing && currentTime == bossTime =
             print gs >>
             return (updateGs gs {
@@ -94,6 +98,28 @@ fullHighScoreUpdater gs = do
     highScores <- loadHighScores
     writeHighScores gs highScores
     updateHighScoreFile
+
+loadSettings :: IO String
+loadSettings = readFile "data/CustomSettings.txt"
+
+stringToSettings :: String -> Settings
+stringToSettings string = Settings {
+    enemySpawnRate = read (head settingsList) :: Float,
+    itemSpawnRate = read (settingsList !! 1) :: Float,
+    enemiesInLevel = map stringToEnemy (words (settingsList !! 2)),
+    bossInLevel = stringToEnemy (settingsList !! 3)
+}
+    where settingsList = lines string
+
+stringToEnemy :: String -> Enemy
+stringToEnemy "basicEnemy" = basicEnemy
+stringToEnemy "toughEnemy" = toughEnemy
+stringToEnemy "smartEnemy" = smartEnemy
+stringToEnemy "basicBoss" = basicBoss
+stringToEnemy "basicBossFastAttack" = basicBossFastAttack
+stringToEnemy "dualBoss" = dualBoss
+stringToEnemy "wallBoss" = wallBoss
+stringToEnemy _ = error "Invalid enemy type"
 
 
 -- # Input Functions # --
@@ -292,6 +318,10 @@ checkButtonPress'' (x:xs) pos
 
 buttonPressed :: GameState -> Button -> GameState
 buttonPressed gs (Button _ _ Start) = playGame gs
+buttonPressed gs (Button _ _ Level1) = initLevel { settings = level1}
+buttonPressed gs (Button _ _ Level2) = initLevel { settings = level2}
+buttonPressed gs (Button _ _ Level3) = initLevel { settings = level3}
+buttonPressed gs (Button _ _ LevelCustom) = customLevel gs
 buttonPressed gs (Button _ _ Quit) = quitGame gs
 buttonPressed gs (Button _ _ ToHighScore) = goToHighScores gs
 buttonPressed gs (Button _ _ Retry) = playGame gs
@@ -303,7 +333,10 @@ buttonPressed gs (Button _ _ ToMainMenu) = goToMainMenu gs
 -- # Menu Functions # --
 
 playGame :: GameState -> GameState
-playGame _ = initLevel
+playGame gs = gs { menu = LevelSelect, buttons = levelSelectButtons }
+
+customLevel :: GameState -> GameState
+customLevel gs = gs { menu = LoadCustomLevel, buttons = noButtons }
 
 pauseGame :: GameState -> GameState
 pauseGame gs = gs { menu = PauseMenu, buttons = pauseButtons }

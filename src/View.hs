@@ -112,7 +112,7 @@ buttonsToPictures = map buttonToPicture
 
 buttonToPicture :: Button -> Picture
 buttonToPicture button =
-    pictures (color red (drawBox button) : [buttonTextToPicture button])
+    pictures (color white (drawBox button) : [buttonTextToPicture button])
 
 buttonTextToPicture :: Button -> Picture
 buttonTextToPicture button = translate (x - 75) y pic
@@ -121,6 +121,10 @@ buttonTextToPicture button = translate (x - 75) y pic
 
 buttonText :: Button -> String
 buttonText (Button _ _ Start) = "Start Game"
+buttonText (Button _ _ Level1) = "Level 1"
+buttonText (Button _ _ Level2) = "Level 2"
+buttonText (Button _ _ Level3) = "Level 3"
+buttonText (Button _ _ LevelCustom) = "Custom Level"
 buttonText (Button _ _ Quit) = "Quit Game"
 buttonText (Button _ _ ToHighScore) = "High Scores"
 buttonText (Button _ _ Retry) = "Retry"

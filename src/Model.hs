@@ -52,11 +52,12 @@ data GameState = GameState {
 } deriving (Show)
 
 
-data Menu = MainMenu | Playing | PauseMenu | GameOverMenu |
-            VictoryMenu | HighScores | Quitting | HighScoreUpdater
+data Menu = MainMenu | LevelSelect | LoadCustomLevel | Playing | PauseMenu |
+            GameOverMenu | VictoryMenu | HighScores | Quitting | HighScoreUpdater
     deriving (Show, Eq)
 
-data Function = Start | ToHighScore | Quit | Retry | ToMainMenu | Resume
+data Function = Start | Level1 | Level2 | Level3 | LevelCustom | ToHighScore | Quit |
+                Retry | ToMainMenu | Resume
     deriving (Show, Eq)
 
 data Attack = BasicAttack | TargetedAttack Player | ItemAttack Item | DualAttack Attack Attack
@@ -282,26 +283,41 @@ defaultWalls = [Wall (0, 550) (2000, 300), -- up
 startButton :: Button
 startButton = Button (0, 75) (200, 50) Start
 
-quitButton :: Button
-quitButton = Button (0, -75) (200, 50) Quit
+retryButton :: Button
+retryButton = Button (0, 75) (200, 50) Retry
+
+resumeButton :: Button
+resumeButton = Button (0, 75) (200, 50) Resume
+
+level1Button :: Button
+level1Button = Button (0, 150) (200, 50) Level1
+
+level2Button :: Button
+level2Button = Button (0, 75) (200, 50) Level2
+
+level3Button :: Button
+level3Button = Button (0, 0) (200, 50) Level3
 
 highScoreButton :: Button
 highScoreButton = Button (0, 0) (200, 50) ToHighScore
 
-retryButton :: Button
-retryButton = Button (0, 75) (200, 50) Retry
+levelCustomButton :: Button
+levelCustomButton = Button (0, -75) (200, 50) LevelCustom
 
 mainMenuButton :: Button
-mainMenuButton = Button (0, -75) (200, 50) ToMainMenu
+mainMenuButton = Button (0, -150) (200, 50) ToMainMenu
 
-resumeButton :: Button
-resumeButton = Button (0, 75) (200, 50) Resume
+quitButton :: Button
+quitButton = Button (0, -75) (200, 50) Quit
 
 noButtons :: [Button]
 noButtons = []
 
 mainMenuButtons :: [Button]
 mainMenuButtons = [startButton, highScoreButton, quitButton]
+
+levelSelectButtons :: [Button]
+levelSelectButtons = [level1Button, level2Button, level3Button, levelCustomButton, mainMenuButton]
 
 gameOverButtons :: [Button]
 gameOverButtons = [retryButton, mainMenuButton]
