@@ -197,8 +197,11 @@ updateBullet bullet = bullet { bulletPosition = newPosition (bulletPosition bull
 
 spawnEnemiesItems :: Float -> Float -> GameState -> GameState
 spawnEnemiesItems randomFloat1 randomFloat2 gs
-        | elem toughEnemy enemies' &&
+        | elem smartEnemy enemies' &&
           (randomFloat1/enemySpawnRate') < 0.01
+          = spawnSmart randomPos gs
+        | elem toughEnemy enemies' &&
+          (randomFloat1/enemySpawnRate') < 0.03
           = spawnTough randomPos gs
         | elem basicEnemy enemies' &&
           (randomFloat1/enemySpawnRate') < 0.1
@@ -262,6 +265,9 @@ spawnBasic yPos gs = gs { enemies = enemies gs ++ [basicEnemy { enemyPosition = 
 
 spawnTough :: Float -> GameState -> GameState
 spawnTough yPos gs = gs { enemies = enemies gs ++ [toughEnemy { enemyPosition = (800, yPos) }] }
+
+spawnSmart :: Float -> GameState -> GameState
+spawnSmart yPos gs = gs { enemies = enemies gs ++ [smartEnemy { enemyPosition = (800, yPos) }] }
 
 spawnBoss :: GameState -> GameState
 spawnBoss gs =  gs { enemies = enemies gs ++ [bossInLevel (settings gs)] }

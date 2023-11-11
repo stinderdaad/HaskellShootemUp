@@ -235,8 +235,8 @@ initLevel = GameState {
     items = [],
     walls = defaultWalls,
     score = 0,
-    time = 0,
-    settings = level2
+    time = 100,
+    settings = level3
 }
 
 level1 :: Settings
@@ -253,13 +253,13 @@ initPlayer :: Player
 initPlayer = Player (-600 ,0) (0, 0) 5 3 (25, 50) BasicAttack 0.2 0
 
 basicEnemy :: Enemy
-basicEnemy = Enemy BasicEnemy (800, 0) (-1, 0) 2.5 3 (25, 60) BasicAttack 50 3 0
+basicEnemy = Enemy BasicEnemy (800, 0) (-1, 0) 2.5 1 (25, 60) BasicAttack 50 3 0
 
 toughEnemy :: Enemy
-toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 10 (50, 120) (DualAttack BasicAttack BasicAttack) 200 1.5 0
+toughEnemy = Enemy ToughEnemy (800, 0) (-1, 0) 1 5 (50, 120) (DualAttack BasicAttack BasicAttack) 200 1.5 0
 
 smartEnemy :: Enemy
-smartEnemy = Enemy SmartEnemy (800, 0) (-1, 0) 1 3 (25, 60) (TargetedAttack initPlayer) 200 1.5 0
+smartEnemy = Enemy SmartEnemy (800, 0) (-1, 0) 1 1 (25, 60) (TargetedAttack initPlayer) 200 1.5 0
 
 basicBoss :: Enemy
 basicBoss = Enemy BossEnemy (850, 0) (-1, 0) 0.2 30 (90, 180) (TargetedAttack initPlayer) 1000 0.5 0
