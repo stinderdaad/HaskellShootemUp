@@ -44,7 +44,7 @@ data GameState = GameState {
 
 
 data Menu = MainMenu | Playing | PauseMenu | GameOverMenu |
-            VictoryMenu | HighScores | Quitting
+            VictoryMenu | HighScores | Quitting | HighScoreUpdater
     deriving (Show, Eq)
 
 data Function = Start | ToHighScore | Quit | Retry | ToMainMenu | Resume
@@ -232,7 +232,7 @@ initLevel = GameState {
     items = [],
     walls = defaultWalls,
     score = 0,
-    time = 100,
+    time = 10,
     settings = level2
 }
 

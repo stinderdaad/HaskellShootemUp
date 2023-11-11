@@ -4,15 +4,18 @@ import Model
 import Data.Maybe
 import System.Exit
 import System.Random
+import System.Directory
 import Graphics.Gloss.Interface.IO.Game
-import Graphics.Gloss.Data.Vector (normalizeV)
-import GHC.Base (VecCount)
+import View (loadHighScores)
 
 -- # Impure # --
 
 step :: Float -> GameState -> IO GameState
 step secs gs
         | menuState == Quitting = exitSuccess
+        | menuState == HighScoreUpdater = do
+            fullHighScoreUpdater gs
+            return (victory gs)
         | menuState == Playing && currentTime == (-10) =
             --print gs >>
             return (updateGs gs {
@@ -61,6 +64,21 @@ input event gs = do
         EventKey (MouseButton LeftButton) Down _ pos -> checkButtonPress gs pos
         _ -> gs
 
+writeHighScores :: GameState -> String -> IO ()
+writeHighScores gs highScores = writeFile "data/HighScoresTemp.txt" (updateHighScores gs highScores)
+
+-- somehow it works like this but not directly because the resource is locked
+updateHighScoreFile :: IO ()
+updateHighScoreFile = do
+    highScores <- readFile "data/HighScoresTemp.txt"
+    writeFile "data/HighScores.txt" highScores
+    removeFile "data/HighScoresTemp.txt"
+
+fullHighScoreUpdater :: GameState -> IO ()
+fullHighScoreUpdater gs = do
+    highScores <- loadHighScores
+    writeHighScores gs highScores
+    updateHighScoreFile
 
 -- # Input Functions # --
 
@@ -208,11 +226,21 @@ checkPlayerDead gs
 
 checkBossDead :: GameState -> GameState
 checkBossDead gs
-        | time gs == -10 && isDead (getBoss (enemies gs)) = victory gs
+        | time gs == -10 && isDead (getBoss (enemies gs)) = highScoreUpdater gs
         | otherwise = gs
 
 awardPoints :: GameState -> GameState
 awardPoints gs = gs { score = score gs + countPoints (enemies gs) }
+
+updateHighScores :: GameState -> String -> String
+updateHighScores gs scores =
+    unlines (take 10 (sortScores (lines scores ++ [show (score gs)])))
+
+sortScores :: [String] -> [String]
+sortScores [] = []
+sortScores (x:xs) = sortScores smaller ++ [x] ++ sortScores larger
+    where smaller = [a | a <- xs, (read a :: Int) >= (read x :: Int)]
+          larger = [b | b <- xs, (read b :: Int) < (read x :: Int)]
 
 spawnBasic :: Float -> GameState -> GameState
 spawnBasic yPos gs = gs { enemies = enemies gs ++ [basicEnemy { enemyPosition = (800, yPos) }] }
@@ -267,6 +295,9 @@ goToHighScores gs = gs { menu = HighScores, buttons = highScoresButtons }
 
 gameOver :: GameState -> GameState
 gameOver gs = gs { menu = GameOverMenu, buttons = gameOverButtons }
+
+highScoreUpdater :: GameState -> GameState
+highScoreUpdater gs = gs { menu = HighScoreUpdater, buttons = noButtons }
 
 victory :: GameState -> GameState
 victory gs = gs { menu = VictoryMenu, buttons = victoryButtons }

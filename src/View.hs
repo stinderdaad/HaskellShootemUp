@@ -2,6 +2,9 @@ module View where
 
 import Graphics.Gloss
 import Model
+import GHC.IO.Handle.FD
+import GHC.IO.IOMode
+import GHC.IO.Handle
 
 type Sprite = Picture
 
