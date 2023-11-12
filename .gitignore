@@ -23,4 +23,3 @@ cabal.project.local~
 .ghc.environment.*
 
 data/HighScores.txt
-data/HighScores.txt
