@@ -246,7 +246,7 @@ initLevel = GameState {
     animations = [],
     walls = defaultWalls,
     score = 0,
-    time = 0,
+    time = 60,
     settings = level2
 }
 
