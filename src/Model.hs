@@ -448,8 +448,17 @@ positionInObject (xPos, yPos) obj =
     where (xObj, yObj) = position obj
           (objWidth, objHeight) = size obj
 
+enemyInBounds :: Enemy -> Bool
+enemyInBounds enemy = (x - fromIntegral w) > -800 &&
+                      (x + fromIntegral w) < 950 &&
+                      (y - fromIntegral h) > -400 &&
+                      (y + fromIntegral h) < 400
+    where (x, y) = position enemy
+          (w, h) = size enemy
+
 countPoints :: [Enemy] -> Int
 countPoints [] = 0
 countPoints (enemy:enemies)
-    | isDead enemy = pointsWorth enemy + countPoints enemies
+    | isDead enemy  && enemyInBounds enemy =
+        pointsWorth enemy + countPoints enemies
     | otherwise = countPoints enemies
