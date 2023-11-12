@@ -1,5 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-
 module Model where
 
 import Graphics.Gloss.Data.Vector
