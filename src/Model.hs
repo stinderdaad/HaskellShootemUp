@@ -361,6 +361,7 @@ normalizeDirection (x, 0) = (x / abs x, 0)
 normalizeDirection (x, y) =  (x / magnitude, y / magnitude)
     where magnitude = sqrt (x^2 + y^2)
 
+-- should definitely be a Maybe Enemy
 getBoss :: [Enemy] -> Enemy
 getBoss [] = error "No boss in list"
 getBoss (enemy:enemies)
@@ -374,8 +375,7 @@ hasDualAttack enemy = case enemyAttack enemy of
 
 updateTargetedAttacks :: GameState -> GameState
 updateTargetedAttacks gs = gs { enemies = newEnemies }
-    where
-        newEnemies = map (updateTargetedAttack gs) (enemies gs)
+    where newEnemies = map (updateTargetedAttack gs) (enemies gs)
 
 updateTargetedAttack :: GameState -> Enemy -> Enemy
 updateTargetedAttack gs enemy = enemy { enemyAttack = updateTargetedAttack' gs (enemyAttack enemy) }
