@@ -45,6 +45,7 @@ data GameState = GameState {
     enemies :: [Enemy],
     bullets :: [Bullet],
     items :: [Item],
+    animations :: [AnimationState],
     walls :: [Wall],
     score :: Int,
     time :: Float,
@@ -116,6 +117,15 @@ data Button = Button {
     buttonSize :: (Int, Int),
     buttonFunction :: Function
 } deriving (Show, Eq)
+
+data AnimationState = AnimationState {
+    amountOfSprites :: Int,
+    animationPosition :: Position,
+    animationCurrentSprite :: Int,
+    framesPerSprite :: Int,
+    framesTillNextSprite :: Int,
+    animationOver :: Bool
+} deriving (Show)
 
 data Settings = Settings {
     enemySpawnRate :: Float,
@@ -220,6 +230,7 @@ initState = GameState {
     enemies = [],
     bullets = [],
     items = [],
+    animations = [],
     walls = defaultWalls,
     score = 0,
     time = 0,
@@ -234,6 +245,7 @@ initLevel = GameState {
     enemies = [],
     bullets = [],
     items = [],
+    animations = [],
     walls = defaultWalls,
     score = 0,
     time = 100,
@@ -279,6 +291,10 @@ defaultWalls = [Wall (0, 550) (2000, 300), -- up
                 Wall (0, -550) (2000, 300), -- down
                 Wall (-950, 0) (300, 800), -- left
                 Wall (1100, 0) (300, 800)] -- right
+
+newAnimationState :: Int -> Position -> AnimationState
+newAnimationState amountOfSprites position =
+    AnimationState amountOfSprites position 1 5 5 False
 
 startButton :: Button
 startButton = Button (0, 75) (200, 50) Start
@@ -352,13 +368,6 @@ getBoss [] = error "No boss in list"
 getBoss (enemy:enemies)
     | enemyType enemy == BossEnemy = enemy
     | otherwise = getBoss enemies
-
--- setBossTargetedAttack :: GameState -> GameState
--- setBossTargetedAttack gs = gs { enemies = newEnemies }
---     where
---         boss = getBoss (enemies gs)
---         newBoss = boss { enemyAttack = TargetedAttack (player gs) }
---         newEnemies = newBoss : (enemies gs \\[boss])
 
 updateTargetedAttacks :: GameState -> GameState
 updateTargetedAttacks gs = gs { enemies = newEnemies }

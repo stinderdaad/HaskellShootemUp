@@ -7,7 +7,12 @@ import GHC.IO.IOMode
 import GHC.IO.Handle
 
 
+-- # Types # --
+
+type Animation = [Sprite]
+
 type Sprite = Picture
+
 
 -- # Impure # --
 
@@ -18,12 +23,14 @@ view gs = do
     basicEnemySprite <- loadBasicEnemySprite
     bulletSprite <- loadBulletSprite
     bossSprite <- loadBossSprite
+    explosionSprites <- loadExplosionFrames
     highScores <- loadHighScores
     return (pictures (
-            allHitboxesToPictures gs : -- only for debugging
+            --allHitboxesToPictures gs : -- only for debugging
             [playerToPicture (player gs) playerSprite] ++
             enemiesToPictures (enemies gs) (basicEnemySprite, basicEnemySprite, bossSprite) ++
             bulletsToPictures (bullets gs) bulletSprite ++
+            animationStatesToPictures (animations gs) explosionSprites ++
             [timerToPicture gs] ++
             [scoreToPicture gs] ++
             [livesToPicture gs] ++
@@ -49,8 +56,23 @@ loadBossSprite = loadBMP "./sprites/Ships/EnemyKamikaze.bmp"
 loadHighScores :: IO String
 loadHighScores = readFile "data/HighScores.txt"
 
+loadExplosionFrames :: IO [Picture]
+loadExplosionFrames = do
+    let path = "./sprites/Misc/explosion_frame"
+    let ext = ".bmp"
+    let frames = [1, 2, 3]
+    mapM (\n -> loadBMP (path ++ show n ++ ext)) frames
+
+
 -- # Pure # --
 -- # Pictures # --
+
+animationStatesToPictures :: [AnimationState] -> Animation -> [Picture]
+animationStatesToPictures states sprites = map (animationStateToPicture sprites) states
+
+animationStateToPicture :: Animation -> AnimationState -> Picture
+animationStateToPicture sprites state =
+    uncurry translate (animationPosition state) (scale 2 2 (sprites !! (animationCurrentSprite state - 1)))
 
 allHitboxesToPictures :: GameState -> Picture
 allHitboxesToPictures gs = pictures (hitboxToPicture (player gs) :

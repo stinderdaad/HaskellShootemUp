@@ -27,6 +27,7 @@ step secs gs
             return (updateGs gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
+                           animations = updateAnimationStates (animations gs),
                            bullets = updateBullets (bullets gs),
                            time = bossTime
                         })
@@ -35,6 +36,7 @@ step secs gs
             return ((updateGs . spawnBoss) gs{
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
+                           animations = updateAnimationStates (animations gs),
                            bullets = updateBullets (bullets gs),
                            time = bossTime
                         })
@@ -43,6 +45,7 @@ step secs gs
             return (updateGs gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
+                           animations = updateAnimationStates (animations gs),
                            bullets = updateBullets (bullets gs),
                            time = bossWaitTime
                         })
@@ -54,6 +57,7 @@ step secs gs
             return ((updateGs . spawnEnemiesItems randomFloat1 randomFloat2) gs {
                            player = updatePlayer secs (player gs),
                            enemies = updateEnemies secs (enemies gs),
+                           animations = updateAnimationStates (animations gs),
                            bullets = updateBullets (bullets gs),
                            time = currentTime - secs
                         })
@@ -64,6 +68,7 @@ step secs gs
                      checkBossDead .
                      awardPoints .
                      checkPlayerDead .
+                     deadEnemiesToAnimations .
                      checkAllCollisions .
                      shooting .
                      updateTargetedAttacks
@@ -222,6 +227,18 @@ updateBullets = map updateBullet
 updateBullet :: Bullet -> Bullet
 updateBullet bullet = bullet { bulletPosition = newPosition (bulletPosition bullet) (bulletDirection bullet) (bulletSpeed bullet) }
 
+updateAnimationStates :: [AnimationState] -> [AnimationState]
+updateAnimationStates = map updateAnimationState
+
+updateAnimationState :: AnimationState -> AnimationState
+updateAnimationState animation
+    | animationCurrentSprite animation == amountOfSprites animation = animation { animationOver = True }
+    | framesTillNextSprite animation <= 0 = animation {
+        animationCurrentSprite = animationCurrentSprite animation + 1,
+        framesTillNextSprite = framesPerSprite animation }
+    | otherwise = animation {
+        framesTillNextSprite = framesTillNextSprite animation - 1 }
+
 spawnEnemiesItems :: Float -> Float -> GameState -> GameState
 spawnEnemiesItems randomFloat1 randomFloat2 gs
         | elem smartEnemy enemies' &&
@@ -258,13 +275,16 @@ collideWithObjects :: (CanCollide a, CanCollide b) => [a] -> [b] -> [a]
 collideWithObjects objs1 objs2 = map (\obj -> foldl collision obj objs2) objs1
 
 removeDeadObjects :: GameState -> GameState
-removeDeadObjects = removeDeadBullets . removeDeadEnemies
+removeDeadObjects = removeDeadBullets . removeDeadEnemies . removeOverAnimations
 
 removeDeadEnemies :: GameState -> GameState
 removeDeadEnemies gs = gs { enemies = filter (not . isDead) (enemies gs) }
 
 removeDeadBullets :: GameState -> GameState
 removeDeadBullets gs = gs { bullets = filter (not . isDead) (bullets gs) }
+
+removeOverAnimations :: GameState -> GameState
+removeOverAnimations gs = gs { animations = filter (not . animationOver) (animations gs) }
 
 checkPlayerDead :: GameState -> GameState
 checkPlayerDead gs
@@ -275,6 +295,13 @@ checkBossDead :: GameState -> GameState
 checkBossDead gs
         | time gs == -10 && isDead (getBoss (enemies gs)) = highScoreUpdater gs
         | otherwise = gs
+
+deadEnemiesToAnimations :: GameState -> GameState
+deadEnemiesToAnimations gs = gs {
+    animations = map enemyToAnimation (filter isDead (enemies gs)) ++ animations gs }
+
+enemyToAnimation :: Enemy -> AnimationState
+enemyToAnimation enemy = newAnimationState 3 (enemyPosition enemy)
 
 awardPoints :: GameState -> GameState
 awardPoints gs = gs { score = score gs + countPoints (enemies gs) }
