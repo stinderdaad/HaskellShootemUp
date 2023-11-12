@@ -36,8 +36,6 @@ type Position = Point
 
 type Direction = Vector
 
---type Size = (Int, Int)
-
 data GameState = GameState {
     menu :: Menu,
     buttons :: [Button],
@@ -248,7 +246,7 @@ initLevel = GameState {
     animations = [],
     walls = defaultWalls,
     score = 0,
-    time = 100,
+    time = 0,
     settings = level2
 }
 
@@ -256,10 +254,10 @@ level1 :: Settings
 level1 = Settings 0.5 0.5 [basicEnemy] basicBoss
 
 level2 :: Settings
-level2 = Settings 0.5 0.5 [basicEnemy, toughEnemy] dualBoss
+level2 = Settings 0.5 0.5 [basicEnemy, toughEnemy] basicBossFastAttack
 
 level3 :: Settings
-level3 = Settings 0.5 0.5 [basicEnemy, toughEnemy, smartEnemy] basicBossFastAttack
+level3 = Settings 0.5 0.5 [basicEnemy, toughEnemy, smartEnemy] dualBoss
 
 -- pos dir speed health size attack reloadTime timeToNextReload
 initPlayer :: Player
@@ -275,13 +273,13 @@ smartEnemy :: Enemy
 smartEnemy = Enemy SmartEnemy (800, 0) (-1, 0) 1 1 (25, 60) (TargetedAttack initPlayer) 200 1.5 0
 
 basicBoss :: Enemy
-basicBoss = Enemy BossEnemy (850, 0) (-1, 0) 0.2 30 (90, 180) (TargetedAttack initPlayer) 1000 0.5 0
+basicBoss = Enemy BossEnemy (850, 0) (-1, 0) 0.3 30 (100, 200) (TargetedAttack initPlayer) 1000 0.4 0
 
 dualBoss :: Enemy
-dualBoss = Enemy BossEnemy (850, 0) (-1, 0) 0.2 30 (90, 180) (DualAttack (TargetedAttack initPlayer) (TargetedAttack initPlayer)) 1000 0.5 0
+dualBoss = Enemy BossEnemy (850, 0) (-1, 0) 0.3 30 (100, 300) (DualAttack (TargetedAttack initPlayer) (TargetedAttack initPlayer)) 1000 0.4 0
 
 basicBossFastAttack :: Enemy
-basicBossFastAttack = Enemy BossEnemy (850, 0) (-1, 0) 0.2 30 (90, 180) (TargetedAttack initPlayer) 1000 0.2 0
+basicBossFastAttack = Enemy BossEnemy (850, 0) (-1, 0) 0.3 30 (90, 180) (TargetedAttack initPlayer) 1000 0.2 0
 
 wallBoss :: Enemy
 wallBoss = Enemy BossEnemy (950, 0) (-1, 0) 2 75 (90, 799) BasicAttack 1000 999 999
@@ -369,6 +367,11 @@ getBoss (enemy:enemies)
     | enemyType enemy == BossEnemy = enemy
     | otherwise = getBoss enemies
 
+hasDualAttack :: Enemy -> Bool
+hasDualAttack enemy = case enemyAttack enemy of
+    DualAttack _ _ -> True
+    _ -> False
+
 updateTargetedAttacks :: GameState -> GameState
 updateTargetedAttacks gs = gs { enemies = newEnemies }
     where
@@ -388,8 +391,8 @@ enemyAttackToBullets enemy BasicAttack =
 enemyAttackToBullets enemy (TargetedAttack target) =
     [Bullet (enemyBulletSpawn enemy) (direction (enemyBulletSpawn enemy) (position target)) 7.5 (25, 15) 1]
 enemyAttackToBullets enemy (DualAttack (TargetedAttack target) (TargetedAttack target')) =
-    Bullet (x, y + 50) (direction (x, y + 100) (position target)) 7.5 (25, 15) 1 :
-    [Bullet (x, y - 50) (direction (x, y - 100) (position target')) 7.5 (25, 15) 1]
+    Bullet (x, y + 100) (direction (x, y + 100) (position target)) 7.5 (25, 15) 1 :
+    [Bullet (x, y - 100) (direction (x, y - 100) (position target')) 7.5 (25, 15) 1]
         where (x, y) = enemyBulletSpawn enemy
 enemyAttackToBullets enemy (DualAttack attack1 attack2) =
     map (moveBulletBy (0, 30)) (enemyAttackToBullets enemy attack1) ++
@@ -411,7 +414,6 @@ filterPlayerBullets bullets =
 
 filterEnemyBullets :: [Bullet] -> [Bullet]
 filterEnemyBullets bullets = bullets \\ filterPlayerBullets bullets
-
 
 objectCorners :: GameObject a => a -> (Position, Position, Position, Position)
 objectCorners obj = ((x - (fromIntegral w/2.0), y + (fromIntegral h/2.0)), -- NW

@@ -21,14 +21,21 @@ view gs = do
 --     putStrLn $ "Rendering with GameState: " ++ show gs
     playerSprite <- loadPlayerSprite
     basicEnemySprite <- loadBasicEnemySprite
+    toughEnemySprite <- loadToughEnemySprite
+    smartEnemySprite <- loadSmartEnemySprite
     bulletSprite <- loadBulletSprite
     bossSprite <- loadBossSprite
+    dualBossSprite <- loadDualBossSprite
     explosionSprites <- loadExplosionFrames
     highScores <- loadHighScores
     return (pictures (
             --allHitboxesToPictures gs : -- only for debugging
             [playerToPicture (player gs) playerSprite] ++
-            enemiesToPictures (enemies gs) (basicEnemySprite, basicEnemySprite, bossSprite) ++
+            enemiesToPictures (enemies gs) (basicEnemySprite,
+                                            toughEnemySprite,
+                                            smartEnemySprite,
+                                            bossSprite,
+                                            dualBossSprite) ++
             bulletsToPictures (bullets gs) bulletSprite ++
             animationStatesToPictures (animations gs) explosionSprites ++
             [timerToPicture gs] ++
@@ -47,11 +54,20 @@ loadPlayerSprite = loadBMP "./sprites/Ships/PlayerShip.bmp"
 loadBasicEnemySprite :: IO Picture
 loadBasicEnemySprite = loadBMP "./sprites/Ships/EnemyBasic.bmp"
 
+loadToughEnemySprite :: IO Picture
+loadToughEnemySprite = loadBMP "./sprites/Ships/EnemyTough.bmp"
+
+loadSmartEnemySprite :: IO Picture
+loadSmartEnemySprite = loadBMP "./sprites/Ships/EnemySmart.bmp"
+
 loadBulletSprite :: IO Picture
 loadBulletSprite = loadBMP "./sprites/Misc/Bullet.bmp"
 
 loadBossSprite :: IO Picture
-loadBossSprite = loadBMP "./sprites/Ships/EnemyKamikaze.bmp"
+loadBossSprite = loadBMP "./sprites/Ships/BasicBoss.bmp"
+
+loadDualBossSprite :: IO Picture
+loadDualBossSprite = loadBMP "./sprites/Ships/DualBoss.bmp"
 
 loadHighScores :: IO String
 loadHighScores = readFile "data/HighScores.txt"
@@ -87,24 +103,27 @@ playerToPicture :: Player -> Sprite -> Picture
 playerToPicture player sprite =
     uncurry translate (position player) (rotate 90 (scale 2 2 sprite))
 
-enemiesToPictures :: [Enemy] -> (Sprite, Sprite, Sprite) -> [Picture]
+enemiesToPictures :: [Enemy] -> (Sprite, Sprite, Sprite, Sprite, Sprite) -> [Picture]
 enemiesToPictures [] _ = [Blank]
-enemiesToPictures (enemy:enemies) (basicEnemySprite, toughEnemySprite, bossSprite)
+enemiesToPictures (enemy:enemies) sprites@(basicEnemySprite, toughEnemySprite, smartEnemySprite, bossSprite, dualSprite)
     | enemyType enemy == BasicEnemy =
         basicEnemyToPicture enemy basicEnemySprite :
-        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+        enemiesToPictures enemies sprites
     | enemyType enemy == ToughEnemy =
-        toughEnemyToPicture enemy toughEnemySprite :
-        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+        toughEnemyToPicture enemy (scale 1.2 1.2 toughEnemySprite) :
+        enemiesToPictures enemies sprites
     | enemyType enemy == SmartEnemy =
-        basicEnemyToPicture enemy basicEnemySprite :
-        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+        basicEnemyToPicture enemy (scale 1.4 1.4 smartEnemySprite) :
+        enemiesToPictures enemies sprites
     | enemyType enemy == BossEnemy && height == 799 =
         bossToPicture enemy (translate 0 (-25) (scale 5 5 bossSprite)) :
-        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+        enemiesToPictures enemies sprites
+    | enemyType enemy == BossEnemy && hasDualAttack enemy =
+        bossToPicture enemy (translate 0 (-5) (scale 1.5 1.5 dualSprite)) :
+        enemiesToPictures enemies sprites
     | enemyType enemy == BossEnemy =
         bossToPicture enemy bossSprite :
-        enemiesToPictures enemies (basicEnemySprite, toughEnemySprite, bossSprite)
+        enemiesToPictures enemies sprites
     where (width, height) = enemySize enemy
 
 basicEnemyToPicture :: Enemy -> Sprite -> Picture
