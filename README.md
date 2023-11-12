@@ -6,6 +6,9 @@ In this game you fly a little plane and you try to avoid getting shot by enemies
 Fortunately you can shoot back and the more enemies you hit the higher your score.
 If you manage to survive long enough a boss will spawn and if you beat it you complete the level.
 
+## Running the game
+'cabal build', then 'cabal run' in the terminal should run the game.
+
 ## Controls
 - You move the plane with either 'wasd' or the arrow keys.
 - You shoot automatically.
